@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+tests
+.env
+veriloop.db
+veriloop.db-journal
+veriloop.db-wal
+.git
+.vscode
+.idea

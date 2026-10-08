@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: veriloop-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - NEBIUS_API_KEY=${NEBIUS_API_KEY:-}
+      - NEBIUS_API_BASE=${NEBIUS_API_BASE:-https://api.tokenfactory.nebius.com/v1}
+      - PRIMARY_MODEL=${PRIMARY_MODEL:-nvidia/llama-3.1-nemotron-70b-instruct}
+      - FAST_MODEL=${FAST_MODEL:-meta-llama/Meta-Llama-3.1-8B-Instruct}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/veriloop.db
+    volumes:
+      - veriloop-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: veriloop-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  veriloop-data:
+    driver: local

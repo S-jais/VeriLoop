@@ -1,0 +1,16 @@
+{
+  "name": "veriloop-workspace",
+  "version": "1.0.0",
+  "description": "VeriLoop — Autonomous Reliability Engineering for AI Agents",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend start",
+    "test": "npm --prefix frontend run lint",
+    "test:backend": "cd backend && python -m pytest tests/ -v",
+    "test:frontend": "npm --prefix frontend run lint"
+  }
+}
