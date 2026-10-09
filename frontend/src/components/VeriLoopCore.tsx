@@ -118,16 +118,35 @@ void main(){
  float e=d-rad;
  float hot=.6+.6*pow(.5+.5*cos(a-uT*.5),2.);
  vec3 c=vec3(0.);
+
+ /* 1. Ambient domain-warped plasma billowing outward across screen from the animation source */
+ vec2 pAmb=q*0.42;
+ vec2 drift=-dir*(uT*0.075);
+ vec2 f1=vec2(fbm(pAmb+drift+vec2(uT*0.02,-uT*0.015)),fbm(pAmb+drift+vec2(5.2,1.3)+vec2(-uT*0.015,uT*0.02)));
+ vec2 f2=vec2(fbm(pAmb+2.2*f1+vec2(1.7,9.2)-dir*(uT*0.05)),fbm(pAmb+2.2*f1+vec2(8.3,2.8)-dir*(uT*0.04)));
+ float ambSmoke=fbm(pAmb+2.4*f2);
+ float ambReach=0.38+0.62*exp(-d*0.22);
+ float cloudPattern=smoothstep(0.28,0.85,ambSmoke);
+ float streamers=pow(0.5+0.5*cos(a*5.0+ambSmoke*5.0-uT*0.35),3.0);
+ vec3 ambCol=mix(vec3(0.005,0.015,0.025),uRing*0.36,cloudPattern);
+ ambCol+=uRing*pow(cloudPattern,2.2)*0.45;
+ ambCol+=uRing*streamers*0.18*exp(-d*0.32);
+ ambCol+=mix(uRing*0.2,vec3(0.15,0.6,0.9)*0.2,f2.x)*cloudPattern;
+ c+=ambCol*ambReach*(0.85+0.35*uAct);
+
+ /* 2. Luminous core ring & corona (intense emission source) */
  c+=vec3(1.)*exp(-e*e/.0011)*hot*2.4;
  c+=uRing*(exp(-e*e/.012)*1.5+exp(-abs(e)*2.6)*.32);
  c+=vec3(.1,.3,1.)*exp(-max(e,0.)*1.4)*.14*step(0.,e);
  float inn=smoothstep(0.,-.6,e)*step(e,0.);
  float wisp=fbm(dir*3.+vec2(d*5.-uT*.6,uT*.2));
  c+=uRing*inn*wisp*wisp*1.7*(.5+uAct);
- float out_=smoothstep(0.,.45,e)*(1.-smoothstep(.45,1.,e));
- c+=uRing*pow(fbm(dir*4.+vec2(e*3.,uT*.3)),3.)*out_*.9*(.4+uAct);
+ float out_=smoothstep(0.,.55,e)*(1.-smoothstep(.55,1.8,e));
+ c+=uRing*pow(fbm(dir*4.+vec2(e*3.-uT*.4,uT*.25)),2.5)*out_*1.3*(.5+uAct);
  float sa=abs(mod(a-uScan+3.14159,6.28318)-3.14159);
  c+=uRing*exp(-sa*sa*28.)*exp(-e*e/.06)*uAct*.7;
+
+ /* 3. Orbiting packets & central pulsing orb */
  for(int i=0;i<4;i++){vec4 p=uPk[i];
   if(p.y>0.&&p.y<1.){vec2 dd=vec2(cos(p.x),sin(p.x));float rr=mix(1.,.13,p.y);
    float al=dot(q,dd);float pp=length(q-dd*al)+sin(al*38.+uT*12.)*.008;
@@ -138,7 +157,8 @@ void main(){
  c+=uOrb*(exp(-od*od/.011)*1.9+exp(-od*3.4)*(.32+uFlash*.6))+vec3(1.)*exp(-od*od/.0028)*1.3;
  c*=uDim;
  c=1.-exp(-c*1.2);
- gl_FragColor=vec4(vec3(.008,.024,.035)+c,1.);}`;
+ vec3 baseDark=mix(vec3(.004,.010,.016),uRing*0.035,exp(-d*0.28));
+ gl_FragColor=vec4(baseDark+c,1.);}`;
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
