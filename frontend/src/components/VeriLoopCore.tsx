@@ -535,8 +535,13 @@ export function VeriLoopCore({
       cv.height = Math.max(2, Math.round(SH * sc));
       if (gl) gl.viewport(0, 0, cv.width, cv.height);
 
+      const isMobile = SW <= 900;
       const anEl = stageEl.querySelector('.st-anchor');
-      if (anEl) {
+      if (isMobile && variant === 'hero') {
+        AX = SW / 2;
+        AY = Math.min(SH * 0.44, 330);
+        RR = Math.min(SW * 0.32, 125);
+      } else if (anEl) {
         const an = anEl.getBoundingClientRect();
         AX = an.left - r.left + an.width / 2;
         AY = an.top - r.top + an.height / 2;
