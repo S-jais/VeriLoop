@@ -44,7 +44,7 @@ export default function LoginPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px',
+        padding: 'clamp(16px, 4vw, 24px)',
         position: 'relative',
         zIndex: 10,
       }}
@@ -55,7 +55,7 @@ export default function LoginPage() {
         style={{
           width: '100%',
           maxWidth: '440px',
-          padding: '36px 32px',
+          padding: 'clamp(24px, 5vw, 36px) clamp(16px, 4vw, 32px)',
           background: 'rgba(9, 14, 18, 0.65)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',

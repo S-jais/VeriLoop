@@ -197,6 +197,29 @@ h3 {
 .card, .empty, .banner, .nd, pre, .btn, .toast, .split, .flow span {
   border-radius: 3px;
 }
+.split {
+  display: flex;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 3px;
+  font: 600 11px var(--mono);
+  color: #04161A;
+}
+.split > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+@media (max-width: 480px) {
+  .split {
+    font-size: 9.5px;
+    height: 24px;
+  }
+}
 dialog {
   border-radius: 6px;
 }
@@ -341,16 +364,54 @@ dialog {
   min-height: 100vh;
 }
 
-aside {
+aside.aside-nav {
   border-right: 1px solid var(--ln);
-  position: sticky;
-  top: 0;
-  height: 100vh;
   padding: 16px 12px;
-  display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: auto;
+  overflow-y: auto;
+  background: var(--bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@media (max-width: 1023px) {
+  aside.aside-nav:not(.open) {
+    display: none !important;
+  }
+  aside.aside-nav.open {
+    display: flex !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    z-index: 50;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(34, 209, 230, 0.2);
+    animation: slideInNav 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes slideInNav {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  aside.aside-nav {
+    display: flex !important;
+    position: sticky !important;
+    top: 0;
+    height: 100vh;
+    width: 248px !important;
+    flex-shrink: 0 !important;
+  }
 }
 
 .brand {
@@ -583,6 +644,11 @@ th {
   gap: 4px;
   border-bottom: 1px solid var(--ln);
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 .tabs span, .tabs button {
   padding: 8px 12px;
@@ -1116,28 +1182,43 @@ dialog button.c:hover, dialog button.c:focus-visible {
   bottom: 0;
 }
 
-@media (max-width: 1000px) {
-  .app { grid-template-columns: 1fr; }
-  aside {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 8px;
+/* ==================================================
+   RESPONSIVE DESIGN SYSTEM
+   Small phones (320px) to Large Desktops (1440px+)
+   ================================================== */
+
+/* Laptops & Tablets (< 1024px) */
+@media (max-width: 1023px) {
+  .app {
+    grid-template-columns: 1fr;
   }
-  aside .grp, .ws, .brand span { display: none; }
-  aside a { white-space: nowrap; }
-  .g4, .g3 { grid-template-columns: repeat(2, 1fr); }
-  .g21 { grid-template-columns: 1fr; }
+  .g21 {
+    grid-template-columns: 1fr;
+  }
+  .g4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .g3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  header.tb {
+    padding: 0 16px;
+    height: 62px;
+  }
+  main {
+    padding: 22px 18px 80px;
+    gap: 20px;
+  }
 }
 
+/* Tablets & Mobile Hero Stage (< 900px) */
 @media (max-width: 900px) {
   .stage {
     min-height: 100svh;
     height: auto;
     overflow: hidden;
     position: relative;
-    padding-bottom: 70px;
+    padding-bottom: 64px;
   }
   .stage[data-mode="demo"] {
     display: block;
@@ -1146,7 +1227,7 @@ dialog button.c:hover, dialog button.c:focus-visible {
   .st-copy {
     max-width: 100%;
     width: 100%;
-    padding: 72px 20px 24px;
+    padding: clamp(60px, 9vh, 80px) clamp(16px, 4vw, 24px) 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1156,23 +1237,34 @@ dialog button.c:hover, dialog button.c:focus-visible {
   }
   .st-copy .eyebrow {
     margin-top: 0;
-    font-size: 11px;
+    font-size: clamp(10px, 2.6vw, 12px);
+    letter-spacing: 0.08em;
     text-align: center;
   }
   .st-copy h1 {
-    font-size: clamp(26px, 7vw, 36px);
+    font-size: clamp(26px, 7vw, 42px);
     line-height: 1.15;
     text-align: center;
+    margin-bottom: 6px;
   }
   .st-copy .s {
-    font-size: 14px;
+    font-size: clamp(13px, 3.4vw, 16px);
     max-width: 38ch;
     text-align: center;
-    margin: 0 auto;
+    margin: 0 auto 12px;
+    line-height: 1.45;
   }
   .st-copy .fl {
     justify-content: center;
     gap: 10px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .st-copy .fl .btn {
+    flex: 1 1 150px;
+    justify-content: center;
+    font-size: 13.5px;
+    padding: 10px 16px;
   }
   .st-anchor {
     position: absolute;
@@ -1188,9 +1280,9 @@ dialog button.c:hover, dialog button.c:focus-visible {
     display: none !important;
   }
   .st-top {
-    left: 16px;
-    top: 14px;
-    right: 16px;
+    left: 14px;
+    top: 12px;
+    right: 14px;
     justify-content: space-between;
   }
   .st-res {
@@ -1203,42 +1295,107 @@ dialog button.c:hover, dialog button.c:focus-visible {
     white-space: normal;
     font-size: 11.5px;
   }
+  /* Bottom docked bar inside hero stage - NOT fixed globally over page */
   .st-bar {
-    position: fixed;
+    position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 52px;
     padding: 0 12px;
-    overflow-x: auto;
     gap: 8px;
-    z-index: 10;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    background: rgba(4, 9, 13, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--ln);
   }
   .flow.ar-stages {
+    display: flex;
+    align-items: center;
     overflow-x: auto;
+    white-space: nowrap;
     padding-bottom: 2px;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 1;
   }
   .flow.ar-stages::-webkit-scrollbar {
     display: none;
+  }
+  .flow.ar-stages span {
+    font-size: 11.5px;
+    padding: 3px 8px;
+    white-space: nowrap;
   }
   .ar-cnt.st-stats {
     display: none;
   }
 }
 
-@media (max-width: 700px) {
-  .g2, .g3, .g4 { grid-template-columns: 1fr; }
-  .row { grid-template-columns: 1fr 1fr; }
-  .row.h { display: none; }
-  header.tb { padding: 0 14px; }
-  main { padding: 18px 14px 80px; }
-  .tb .hd { display: none; }
+/* Mobile Phones (< 768px) */
+@media (max-width: 767px) {
+  .g2, .g3, .g4, .g21 {
+    grid-template-columns: 1fr;
+  }
+  .card.g.g2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .card {
+    padding: 15px;
+  }
+  header.tb {
+    padding: 0 12px;
+    height: 56px;
+    gap: 8px;
+  }
+  header.tb .bd,
+  header.tb label,
+  header.tb .btn-reset {
+    display: none !important;
+  }
+  main {
+    padding: 16px 12px 72px;
+    gap: 16px;
+  }
+  .land nav {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .land section {
+    padding: clamp(48px, 8vw, 72px) 14px;
+    gap: 18px;
+  }
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Small Phones (< 360px) */
+@media (max-width: 359px) {
+  .card.g.g2 {
+    grid-template-columns: 1fr;
+  }
+  .st-copy .fl .btn {
+    flex: 1 1 100%;
+  }
+  header.tb {
+    padding: 0 8px;
+  }
+  main {
+    padding: 12px 8px 60px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

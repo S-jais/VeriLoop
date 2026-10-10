@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Play, RotateCcw, Search } from 'lucide-react';
+import { Play, RotateCcw, Search, Menu } from 'lucide-react';
+import { useNav } from '@/components/AppShell';
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -20,6 +21,7 @@ const TITLES: Record<string, string> = {
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { toggle } = useNav();
   const [resetting, setResetting] = useState(false);
   const [demoData, setDemoData] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
@@ -75,10 +77,21 @@ export function TopBar() {
 
   return (
     <header className="tb">
+      {/* Mobile Menu Hamburger Button */}
+      <button
+        id="btn-nav-toggle"
+        onClick={toggle}
+        className="lg:hidden p-1.5 -ml-1 mr-1 rounded text-[var(--tx)] hover:bg-[var(--s2)] transition-colors inline-flex items-center justify-center cursor-pointer"
+        aria-label="Open navigation menu"
+        title="Open navigation menu"
+      >
+        <Menu size={20} />
+      </button>
+
       <span className="mu hidden sm:inline" style={{ fontSize: '13px' }}>
         Customer Support Agent&nbsp;›&nbsp;
       </span>
-      <span className="t">{title}</span>
+      <span className="t truncate max-w-[120px] sm:max-w-none">{title}</span>
 
       <span className="sp" />
 
@@ -89,7 +102,7 @@ export function TopBar() {
       <button
         onClick={handleReset}
         disabled={resetting}
-        className="btn sm"
+        className="btn sm btn-reset"
         title="Reset demo baseline"
         aria-label="Reset demo"
         style={{ padding: '6px 10px', fontSize: '12px' }}
@@ -119,16 +132,18 @@ export function TopBar() {
       >
         <Search size={12} className="mu" />
         <span className="hidden sm:inline">Search</span>
-        <span className="mono mu" style={{ fontSize: '10.5px' }}>⌘K</span>
+        <span className="mono mu hidden lg:inline" style={{ fontSize: '10.5px' }}>⌘K</span>
       </button>
 
       <button
         onClick={handleRunEvaluation}
         disabled={isRunning}
-        className="btn p"
+        className="btn p whitespace-nowrap"
+        style={{ padding: '6px 12px', fontSize: '12.5px' }}
       >
-        <Play size={13} fill="currentColor" />
-        <span>{isRunning ? 'Running...' : 'Run Evaluation'}</span>
+        <Play size={12} fill="currentColor" />
+        <span className="hidden sm:inline">{isRunning ? 'Running...' : 'Run Evaluation'}</span>
+        <span className="sm:hidden">{isRunning ? '...' : 'Run'}</span>
       </button>
     </header>
   );

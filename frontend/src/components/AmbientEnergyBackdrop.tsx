@@ -8,16 +8,23 @@ float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
 float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*n(p);p=p*2.02+vec2(1.7,9.2);a*=.5;}return s;}
 void main(){
- vec2 p=gl_FragCoord.xy/uR.y*1.5;p.y+=uS;float t=uT*.045;
- vec2 q=vec2(fbm(p+vec2(t,0.)),fbm(p+vec2(5.2,1.3)-t));
- vec2 r=vec2(fbm(p+3.*q+vec2(1.7,9.2)+t*1.6),fbm(p+3.*q+vec2(8.3,2.8)-t*1.2));
- float f=fbm(p+3.*r);
- float d=smoothstep(.32,.95,f);
- vec3 cy=uTint,bl=mix(vec3(.1,.32,1.),uTint*.8,.55),hi=mix(uTint,vec3(1.),.6);
- vec3 c=mix(bl,cy,smoothstep(.3,.85,f));c=mix(c,hi,smoothstep(.55,1.,r.x*f*2.2)*.5);
- float a=d*.42*(1.+uE*1.1);
- if(uL>.5){c=mix(uTint*.45,uTint*.72,smoothstep(.3,.85,f));a=d*.22*(1.+uE*1.1);}
- gl_FragColor=vec4(c*a,a);}`;
+ vec2 p = (gl_FragCoord.xy - uR * 0.5) / min(uR.x, uR.y) * 2.2;
+ p.y += uS;
+ float t = uT * 0.045;
+ vec2 q = vec2(fbm(p + vec2(t, 0.)), fbm(p + vec2(5.2, 1.3) - t));
+ vec2 r = vec2(fbm(p + 3. * q + vec2(1.7, 9.2) + t * 1.6), fbm(p + 3. * q + vec2(8.3, 2.8) - t * 1.2));
+ float f = fbm(p + 3. * r);
+ float d = smoothstep(.32, .95, f);
+ vec3 cy = uTint, bl = mix(vec3(.1, .32, 1.), uTint * .8, .55), hi = mix(uTint, vec3(1.), .6);
+ vec3 c = mix(bl, cy, smoothstep(.3, .85, f));
+ c = mix(c, hi, smoothstep(.55, 1., r.x * f * 2.2) * .5);
+ float a = d * .42 * (1. + uE * 1.1);
+ if(uL > .5){
+  c = mix(uTint * .45, uTint * .72, smoothstep(.3, .85, f));
+  a = d * .22 * (1. + uE * 1.1);
+ }
+ gl_FragColor = vec4(c * a, a);
+}`;
 
 export function AmbientEnergyBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -116,8 +123,10 @@ export function AmbientEnergyBackdrop() {
 
     const size = () => {
       if (!cv || !gl) return;
-      cv.width = Math.max(2, Math.round(window.innerWidth * q));
-      cv.height = Math.max(2, Math.round(window.innerHeight * q));
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      cv.width = Math.max(2, Math.round(w * q));
+      cv.height = Math.max(2, Math.round(h * q));
       gl.viewport(0, 0, cv.width, cv.height);
     };
 
@@ -190,6 +199,7 @@ export function AmbientEnergyBackdrop() {
     };
 
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
     window.addEventListener('scroll', handleScroll, { passive: true });
     document.addEventListener('visibilitychange', handleVisibility);
 
@@ -201,6 +211,7 @@ export function AmbientEnergyBackdrop() {
     return () => {
       if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
@@ -213,8 +224,7 @@ export function AmbientEnergyBackdrop() {
       aria-hidden="true"
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
+        inset: 0,
         width: '100vw',
         height: '100vh',
         pointerEvents: 'none',

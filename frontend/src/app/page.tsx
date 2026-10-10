@@ -41,14 +41,14 @@ export default function HomePage() {
   };
 
   return (
-    <div className="land min-h-screen text-[var(--tx)] w-full">
+    <div className="land min-h-screen text-[var(--tx)] w-full overflow-x-hidden">
       {/* Top Navbar: Full-width sticky header */}
       <nav
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '16px',
-          padding: '16px max(24px, 5vw)',
+          gap: 'clamp(8px, 2vw, 16px)',
+          padding: '12px max(16px, 4vw)',
           borderBottom: '1px solid rgba(26, 42, 49, 0.85)',
           background: 'rgba(7, 11, 14, 0.75)',
           backdropFilter: 'blur(16px)',
@@ -69,6 +69,7 @@ export default function HomePage() {
             fontWeight: 650,
             fontSize: '15px',
             cursor: 'pointer',
+            flexShrink: 0,
           }}
           title="VeriLoop Home"
         >
@@ -118,12 +119,16 @@ export default function HomePage() {
         <Link
           className="mu hover:text-[var(--tx)] transition-colors"
           href="/login"
-          style={{ fontSize: '13.5px', textDecoration: 'none', marginLeft: '6px' }}
+          style={{ fontSize: '13.5px', textDecoration: 'none', marginLeft: '4px' }}
         >
           Sign In
         </Link>
 
-        <Link className="btn p" href="/dashboard" style={{ padding: '7px 16px', fontSize: '13.5px' }}>
+        <Link
+          className="btn p whitespace-nowrap"
+          href="/dashboard"
+          style={{ padding: '6px 14px', fontSize: '13px' }}
+        >
           Open app
         </Link>
       </nav>
@@ -136,9 +141,20 @@ export default function HomePage() {
       />
 
       {/* Section: Why AI agents fail */}
-      <section style={{ padding: '72px max(24px, 5vw)', maxWidth: '1240px', margin: 'auto', display: 'grid', gap: '22px' }}>
+      <section
+        style={{
+          padding: 'clamp(48px, 8vw, 80px) max(16px, 4vw)',
+          maxWidth: '1240px',
+          margin: 'auto',
+          display: 'grid',
+          gap: '22px',
+        }}
+      >
         <h2>Why AI agents fail</h2>
-        <div className="g g4">
+        <div
+          className="g g4"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
+        >
           {FAILURE_MODES.map((fm) => (
             <div key={fm} className="card">
               <h3>{fm}</h3>
@@ -148,13 +164,25 @@ export default function HomePage() {
       </section>
 
       {/* Section: The VeriLoop loop */}
-      <section id="how" style={{ padding: '72px max(24px, 5vw)', maxWidth: '1240px', margin: 'auto', display: 'grid', gap: '22px' }}>
+      <section
+        id="how"
+        style={{
+          padding: 'clamp(48px, 8vw, 80px) max(16px, 4vw)',
+          maxWidth: '1240px',
+          margin: 'auto',
+          display: 'grid',
+          gap: '22px',
+        }}
+      >
         <h2>The VeriLoop loop</h2>
-        <div className="g g4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <div
+          className="g g4"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+        >
           {LOOP_STAGES.map(([title, desc]) => (
             <div key={title} className="card">
               <h3>{title}</h3>
-              <p className="mu" style={{ marginTop: '6px', fontSize: '13px' }}>
+              <p className="mu" style={{ marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
                 {desc}
               </p>
             </div>
@@ -163,9 +191,17 @@ export default function HomePage() {
       </section>
 
       {/* Section: From failure to proof */}
-      <section style={{ padding: '72px max(24px, 5vw)', maxWidth: '1240px', margin: 'auto', display: 'grid', gap: '22px' }}>
+      <section
+        style={{
+          padding: 'clamp(48px, 8vw, 80px) max(16px, 4vw)',
+          maxWidth: '1240px',
+          margin: 'auto',
+          display: 'grid',
+          gap: '22px',
+        }}
+      >
         <h2>From failure to proof</h2>
-        <div className="flow">
+        <div className="flow" style={{ flexWrap: 'wrap', gap: '8px' }}>
           <span>Failure detected</span>
           <i>→</i>
           <span>Root cause</span>
@@ -183,20 +219,28 @@ export default function HomePage() {
       </section>
 
       {/* Section: Built for real AI engineering */}
-      <section style={{ padding: '72px max(24px, 5vw)', maxWidth: '1240px', margin: 'auto', display: 'grid', gap: '22px' }}>
+      <section
+        style={{
+          padding: 'clamp(48px, 8vw, 80px) max(16px, 4vw)',
+          maxWidth: '1240px',
+          margin: 'auto',
+          display: 'grid',
+          gap: '22px',
+        }}
+      >
         <h2>Built for real AI engineering</h2>
         <div className="card g g2" style={{ gap: '24px' }}>
           <div>
             <p className="mu" style={{ fontSize: '14px', lineHeight: 1.6 }}>
               Nebius Token Factory serves the inference layer. An NVIDIA model handles reasoning and evaluation. Tavily supplies external evidence when a failure needs it.
             </p>
-            <div className="fl" style={{ marginTop: '14px' }}>
+            <div className="fl" style={{ marginTop: '14px', flexWrap: 'wrap' }}>
               <span className="bd in"><i></i>NEBIUS TOKEN FACTORY</span>
               <span className="bd in"><i></i>NVIDIA MODEL</span>
               <span className="bd in"><i></i>TAVILY</span>
             </div>
           </div>
-          <div className="fl" style={{ alignContent: 'flex-start' }}>
+          <div className="fl" style={{ alignContent: 'flex-start', flexWrap: 'wrap' }}>
             {CAPABILITIES.map((cap) => (
               <span key={cap} className="bd">
                 <i></i>{cap}
@@ -209,7 +253,7 @@ export default function HomePage() {
       {/* Section: Don't trust an agent because it passed a demo. Prove it. */}
       <section
         style={{
-          padding: '96px max(24px, 5vw) 120px',
+          padding: 'clamp(64px, 10vw, 100px) max(16px, 4vw) 120px',
           maxWidth: '1240px',
           margin: 'auto',
           textAlign: 'center',
@@ -219,7 +263,7 @@ export default function HomePage() {
         }}
       >
         <h2>Don’t trust an agent because it passed a demo.</h2>
-        <h1 style={{ fontSize: '36px' }}>Prove it.</h1>
+        <h1 style={{ fontSize: 'clamp(28px, 6vw, 44px)' }}>Prove it.</h1>
         <button
           className="btn p"
           onClick={handleRunEvaluation}

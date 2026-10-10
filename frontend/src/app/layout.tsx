@@ -1,9 +1,15 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Navigation } from '@/components/Navigation';
 import { TopBar } from '@/components/TopBar';
 import { QueryProvider } from '@/components/QueryProvider';
 import { CommandPalette } from '@/components/CommandPalette';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: 'VeriLoop — The AI engineer that tests your AI engineer',

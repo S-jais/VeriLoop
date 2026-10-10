@@ -90,9 +90,9 @@ export default function DashboardPage() {
     : 'AWAITING EVALUATION';
 
   return (
-    <div className="space-y-6 animate-fade-in text-[var(--tx)]">
+    <div className="space-y-6 animate-fade-in text-[var(--tx)] w-full min-w-0">
       {/* Header Section */}
-      <div style={{ paddingBottom: '28px', borderBottom: '1px solid var(--ln)' }}>
+      <div style={{ paddingBottom: '24px', borderBottom: '1px solid var(--ln)' }}>
         <div className="fl">
           <span className={`bd ${eval_?.critical_failures === 0 ? 'ok' : 'wn'}`}>
             <i></i>
@@ -103,11 +103,11 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        <div className="eyebrow">
+        <div className="eyebrow" style={{ marginTop: '16px', marginBottom: '8px' }}>
           Autonomous reliability engineering
         </div>
 
-        <h1>
+        <h1 style={{ fontSize: 'clamp(24px, 4.5vw, 42px)', lineHeight: 1.15 }}>
           Know why your agent fails <span className="mu">before your users do.</span>
         </h1>
 
@@ -115,37 +115,39 @@ export default function DashboardPage() {
           className="fl"
           style={{
             justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            marginTop: '24px',
-            gap: '24px',
+            alignItems: 'center',
+            marginTop: '20px',
+            gap: '16px',
             flexWrap: 'wrap',
           }}
         >
-          <p className="lead">Test. Diagnose. Intervene. Validate. Prove.</p>
-          <div className="fl">
+          <p className="lead" style={{ fontSize: 'clamp(14px, 2.5vw, 18px)' }}>
+            Test. Diagnose. Intervene. Validate. Prove.
+          </p>
+          <div className="fl" style={{ gap: '10px' }}>
             <button
-              className="btn p"
+              className="btn p whitespace-nowrap"
               onClick={handleRunEvaluation}
               disabled={isRunning}
             >
               <Play size={13} fill="currentColor" />
               <span>{isRunning ? 'Running evaluation...' : 'Run Evaluation'}</span>
             </button>
-            <Link className="btn" href="/reports">
+            <Link className="btn whitespace-nowrap" href="/reports">
               View latest report
             </Link>
           </div>
         </div>
       </div>
 
-
       {/* Reliability Score & Top Metric Cards */}
       <div className="g g21">
         <div className="card">
           <div className="lbl">VeriLoop reliability score</div>
-          <div className="fl" style={{ margin: '8px 0' }}>
+          <div className="fl" style={{ margin: '8px 0', flexWrap: 'wrap', gap: '8px', alignItems: 'baseline' }}>
             <span
               className={`big ${reliability !== null ? (reliability >= 70 ? 'text-[var(--gr)]' : 'text-[var(--rd)]') : 'mu'}`}
+              style={{ fontSize: 'clamp(32px, 6vw, 48px)' }}
             >
               {reliability !== null ? `${reliability}%` : '—'}
             </span>
@@ -155,7 +157,7 @@ export default function DashboardPage() {
               {reliability !== null ? (reliability >= 70 ? 'PASS' : 'FAIL') : 'Awaiting evaluation'}
             </span>
           </div>
-          <p className="mu" style={{ fontSize: '12.5px' }}>
+          <p className="mu" style={{ fontSize: '12.5px', lineHeight: 1.5 }}>
             A product-level metric, not an industry standard. Raw category scores stay visible beside it.
           </p>
         </div>
@@ -165,7 +167,7 @@ export default function DashboardPage() {
             <div className="lbl">Critical failures</div>
             <div
               className={`big ${eval_?.critical_failures ? 'text-[var(--rd)]' : 'mu'}`}
-              style={{ fontSize: '26px' }}
+              style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}
             >
               {eval_ ? eval_.critical_failures : '—'}
             </div>
@@ -174,20 +176,20 @@ export default function DashboardPage() {
             <div className="lbl">High-severity</div>
             <div
               className={`big ${eval_?.high_failures ? 'text-[var(--or)]' : 'mu'}`}
-              style={{ fontSize: '26px' }}
+              style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}
             >
               {eval_ ? eval_.high_failures : '—'}
             </div>
           </div>
           <div>
             <div className="lbl">Pass rate</div>
-            <div className="big text-[var(--cy)]" style={{ fontSize: '26px' }}>
+            <div className="big text-[var(--cy)]" style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}>
               {eval_ ? `${eval_.passed_tests}/${eval_.total_tests}` : '—'}
             </div>
           </div>
           <div>
             <div className="lbl">Regressions</div>
-            <div className="big text-[var(--gr)]" style={{ fontSize: '26px' }}>
+            <div className="big text-[var(--gr)]" style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}>
               0
             </div>
           </div>
@@ -197,33 +199,33 @@ export default function DashboardPage() {
       {/* Latest Evaluation Metadata Card */}
       <div className="card">
         <div className="lbl">Latest evaluation</div>
-        <div className="g g4" style={{ marginTop: '10px' }}>
-          <div>
-            <span className="mu">Agent</span>
+        <div className="g g4" style={{ marginTop: '12px', gap: '16px' }}>
+          <div className="min-w-0">
+            <span className="mu" style={{ fontSize: '12px' }}>Agent</span>
             <br />
-            <b>Customer Support Agent</b>
+            <b className="truncate block" style={{ fontSize: '14px' }}>Customer Support Agent</b>
           </div>
-          <div>
-            <span className="mu">Version</span>
+          <div className="min-w-0">
+            <span className="mu" style={{ fontSize: '12px' }}>Version</span>
             <br />
-            <b>v1.0 (baseline)</b>
+            <b className="truncate block" style={{ fontSize: '14px' }}>v1.0 (baseline)</b>
           </div>
-          <div>
-            <span className="mu">Model</span>
+          <div className="min-w-0">
+            <span className="mu" style={{ fontSize: '12px' }}>Model</span>
             <br />
-            <b>NVIDIA Nemotron 70B</b>
+            <b className="truncate block" style={{ fontSize: '14px' }}>NVIDIA Nemotron 70B</b>
           </div>
-          <div>
-            <span className="mu">Status</span>
+          <div className="min-w-0">
+            <span className="mu" style={{ fontSize: '12px' }}>Status</span>
             <br />
-            <b>{eval_ ? 'Completed audit' : 'No run yet'}</b>
+            <b className="truncate block" style={{ fontSize: '14px' }}>{eval_ ? 'Completed audit' : 'No run yet'}</b>
           </div>
         </div>
       </div>
 
       {/* Hotspots & Experiment Status Split Table */}
       <div className="g g2">
-        <div className="card">
+        <div className="card min-w-0">
           <h3>Failure hotspots</h3>
           <div style={{ marginTop: '8px' }}>
             {TAXONOMY_CATEGORIES.map((tax) => {
@@ -236,15 +238,16 @@ export default function DashboardPage() {
                   className="fl"
                   style={{
                     justifyContent: 'space-between',
-                    padding: '6px 0',
+                    padding: '8px 0',
                     borderTop: '1px solid var(--ln)',
+                    gap: '8px',
                   }}
                 >
-                  <span className="mono" style={{ fontSize: '12px' }}>
+                  <span className="mono truncate" style={{ fontSize: '12px' }}>
                     {tax}
                   </span>
                   <span
-                    className={`mono ${count > 0 ? 'text-[var(--rd)] font-bold' : 'mu'}`}
+                    className={`mono whitespace-nowrap ${count > 0 ? 'text-[var(--rd)] font-bold' : 'mu'}`}
                     style={{ fontSize: '12px' }}
                   >
                     {count > 0 ? `${count} detected` : '—'}
@@ -255,10 +258,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card min-w-0">
           <h3>Experiment status (60/20/20 Generalization)</h3>
-          <div style={{ overflowX: 'auto', marginTop: '8px' }}>
-            <table>
+          <div className="table-scroll" style={{ marginTop: '8px' }}>
+            <table style={{ width: '100%', minWidth: '380px' }}>
               <thead>
                 <tr>
                   <th>Split</th>
@@ -302,7 +305,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Failures Table */}
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card min-w-0" style={{ padding: 0 }}>
         <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--ln)' }} className="fl">
           <h3>Recent failures</h3>
           <span className="sp" />
@@ -320,46 +323,48 @@ export default function DashboardPage() {
             </button>
           </div>
         ) : (
-          <div>
-            <div className="row h">
-              <span>ID</span>
-              <span>Scenario</span>
-              <span>Type</span>
-              <span>Severity</span>
-              <span>Root cause</span>
-              <span>Action</span>
-            </div>
-            {failures.slice(0, 5).map((f) => (
-              <div key={f.id} className="row">
-                <span className="mono" style={{ fontSize: '11.5px' }}>
-                  {f.id.slice(0, 8)}
-                </span>
-                <span style={{ fontWeight: 500 }}>
-                  {f.failure_type || f.category || 'Policy mismatch'}
-                </span>
-                <span className="mono" style={{ fontSize: '11px', color: 'var(--cy)' }}>
-                  {f.taxonomy_category || f.category}
-                </span>
-                <span
-                  className={
-                    f.severity === 'CRITICAL'
-                      ? 'er'
-                      : f.severity === 'HIGH'
-                      ? 'or'
-                      : 'wn'
-                  }
-                  style={{ fontWeight: 600, fontSize: '11.5px' }}
-                >
-                  {f.severity}
-                </span>
-                <span className="mu" style={{ fontSize: '12.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {f.root_cause || f.root_cause_hypothesis || 'Outdated policy retrieval'}
-                </span>
-                <Link className="btn sm" href={`/failures?id=${f.id}`}>
-                  Investigate
-                </Link>
+          <div className="table-scroll">
+            <div style={{ minWidth: '640px' }}>
+              <div className="row h">
+                <span>ID</span>
+                <span>Scenario</span>
+                <span>Type</span>
+                <span>Severity</span>
+                <span>Root cause</span>
+                <span>Action</span>
               </div>
-            ))}
+              {failures.slice(0, 5).map((f) => (
+                <div key={f.id} className="row">
+                  <span className="mono" style={{ fontSize: '11.5px' }}>
+                    {f.id.slice(0, 8)}
+                  </span>
+                  <span style={{ fontWeight: 500 }}>
+                    {f.failure_type || f.category || 'Policy mismatch'}
+                  </span>
+                  <span className="mono" style={{ fontSize: '11px', color: 'var(--cy)' }}>
+                    {f.taxonomy_category || f.category}
+                  </span>
+                  <span
+                    className={
+                      f.severity === 'CRITICAL'
+                        ? 'er'
+                        : f.severity === 'HIGH'
+                        ? 'or'
+                        : 'wn'
+                    }
+                    style={{ fontWeight: 600, fontSize: '11.5px' }}
+                  >
+                    {f.severity}
+                  </span>
+                  <span className="mu truncate" style={{ fontSize: '12.5px' }}>
+                    {f.root_cause || f.root_cause_hypothesis || 'Outdated policy retrieval'}
+                  </span>
+                  <Link className="btn sm" href={`/failures?id=${f.id}`}>
+                    Investigate
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

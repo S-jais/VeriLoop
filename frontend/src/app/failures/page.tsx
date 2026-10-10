@@ -259,9 +259,9 @@ function FailuresContent() {
 
       {/* Active Failure Header Detail */}
       <div className="card space-y-3">
-        <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
           <div>
-            <div className="fl" style={{ gap: '10px' }}>
+            <div className="fl" style={{ gap: '8px', flexWrap: 'wrap' }}>
               <span className="mono text-[var(--cy)]" style={{ fontSize: '13px', fontWeight: 600 }}>
                 {activeFailure.id}
               </span>
@@ -272,20 +272,20 @@ function FailuresContent() {
                 <i></i>{activeFailure.type}
               </span>
             </div>
-            <h2 style={{ fontSize: '20px', marginTop: '6px' }}>{activeFailure.scenario}</h2>
+            <h2 style={{ fontSize: 'clamp(18px, 3.5vw, 22px)', marginTop: '6px', lineHeight: 1.3 }}>{activeFailure.scenario}</h2>
           </div>
 
-          <div className="fl">
+          <div className="fl" style={{ gap: '8px', flexWrap: 'wrap' }}>
             <Link
-              className="btn p sm"
+              className="btn p sm whitespace-nowrap"
               href={`/experiments?failure_id=${activeFailure.id}`}
             >
               <Sparkles size={13} />
-              Test Targeted Intervention
+              <span>Test Targeted Intervention</span>
             </Link>
-            <Link className="btn sm" href="/evidence">
+            <Link className="btn sm whitespace-nowrap" href="/evidence">
               <Search size={13} />
-              Grounding Evidence
+              <span>Grounding Evidence</span>
             </Link>
           </div>
         </div>
