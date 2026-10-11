@@ -4,12 +4,31 @@ Demo routes — seed data and reset functionality.
 
 import uuid
 import logging
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
 from app.db.database import get_db
-from app.db.models import Agent, AgentVersion, AgentStatus, EvaluationRun, Failure, TestSuite, TestCase, TestResult, EvidenceItem, Experiment, Intervention
+from app.db.models import (
+    Agent,
+    AgentVersion,
+    AgentStatus,
+    EvaluationRun,
+    EvaluationStatus,
+    Failure,
+    FailureCategory,
+    FailureSeverity,
+    TestSuite,
+    TestCase,
+    TestResult,
+    TestSplit,
+    EvidenceItem,
+    Experiment,
+    ExperimentStatus,
+    Intervention,
+    InterventionType,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
