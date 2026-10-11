@@ -79,7 +79,7 @@ VeriLoop leverages **Nebius Token Factory** as its enterprise-grade high-through
 | **Probe Synthesis (`PROBE_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Generates adversarial multi-turn conversation probes targeting subtle edge cases and policy violations. |
 | **Failure Diagnosis (`DIAGNOSIS_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Performs causal root-cause analysis on execution traces, building dependency DAGs between prompt, tool, and retrieval errors. |
 | **Verification Judge (`JUDGE_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Evaluates candidate responses against strict holdout criteria, safety constraints, and regression firewalls. |
-| **Fast Fallback (`FAST_MODEL`)** | `meta-llama/Meta-Llama-3.1-8B-Instruct` | Nebius Token Factory | Low-latency classification and automated token-capped fallback on transient rate limits. |
+| **Fast Fallback (`FAST_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Low-latency classification and automated token-capped fallback on transient rate limits. |
 
 ### Where Nebius Token Factory Delivers Critical Value
 - **Enterprise High-Throughput Inference**: Multi-turn agent evaluation requires generating and grading hundreds of parallel conversational turns. Token Factory provides sustained high tokens-per-second throughput.

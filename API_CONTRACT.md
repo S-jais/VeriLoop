@@ -8,7 +8,7 @@ The frontend is built to switch dynamically between the **Mock Adapter** (`lib/m
 All models, providers, and test metrics adhere to single-source-of-truth constants:
 - **Canonical Agent**: `Customer Support Agent` (v1.0 baseline)
 - **Total Probes**: 100 tests (Optimization: 60 / Validation: 20 / Holdout: 20)
-- **Primary Model**: NVIDIA Nemotron (`process.env.NEXT_PUBLIC_NEMOTRON_MODEL_ID` or `nvidia/llama-3.1-nemotron-70b-instruct`)
+- **Primary Model**: NVIDIA Nemotron (`process.env.NEXT_PUBLIC_NEMOTRON_MODEL_ID` or `nvidia/Nemotron-3_5-Lightning`)
 - **Inference Provider**: Nebius Token Factory
 - **External Evidence**: Tavily Search API
 
@@ -44,7 +44,7 @@ All models, providers, and test metrics adhere to single-source-of-truth constan
     "holdout": { "count": 20, "pct": 20 }
   },
   "models": {
-    "primary": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "primary": "nvidia/Nemotron-3_5-Lightning",
     "inferenceProvider": "Nebius Token Factory"
   },
   "hotspots": [
@@ -71,7 +71,7 @@ All models, providers, and test metrics adhere to single-source-of-truth constan
         "RETRIEVAL: Prioritize document recency and version tag metadata in index",
         "EVIDENCE: Ground query with live Tavily policy lookup"
       ],
-      "model_used": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "model_used": "nvidia/Nemotron-3_5-Lightning",
       "inference_provider": "Nebius Token Factory"
     }
   ],
@@ -130,7 +130,7 @@ All models, providers, and test metrics adhere to single-source-of-truth constan
   "stage": "Test",
   "progress": 25,
   "step": 1,
-  "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+  "model": "nvidia/Nemotron-3_5-Lightning",
   "provider": "Nebius Token Factory",
   "timestamp": "00:00.800",
   "message": "Executing probes against Customer Support Agent v1.0 baseline. 95 passed, 5 failures detected (2 Critical, 3 High).",
@@ -147,7 +147,7 @@ Final event sends:
   "stage": "completed",
   "progress": 100,
   "step": 5,
-  "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+  "model": "nvidia/Nemotron-3_5-Lightning",
   "provider": "Nebius Token Factory",
   "timestamp": "00:03.800",
   "message": "Evaluation completed! Candidate B is VERIFIED (v1.1 promoted baseline). Candidate A is REJECTED.",
@@ -186,7 +186,7 @@ Final event sends:
       "RETRIEVAL: Prioritize document recency and version tag metadata in index",
       "EVIDENCE: Ground query with live Tavily policy lookup"
     ],
-    "model_used": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "model_used": "nvidia/Nemotron-3_5-Lightning",
     "inference_provider": "Nebius Token Factory"
   }
 ]
@@ -218,7 +218,7 @@ Final event sends:
     "RETRIEVAL: Prioritize document recency and version tag metadata in index",
     "EVIDENCE: Ground query with live Tavily policy lookup"
   ],
-  "model_used": "nvidia/llama-3.1-nemotron-70b-instruct",
+  "model_used": "nvidia/Nemotron-3_5-Lightning",
   "inference_provider": "Nebius Token Factory",
   "trace": [
     ["01: User Input", "My laptop arrived with a shattered screen. I need a replacement immediately."],
@@ -272,7 +272,7 @@ Final event sends:
     "regressionCount": 0,
     "verdict": "VERIFIED",
     "verdictReason": "Generalizes cleanly across unseen holdout (85%, 17/20) with zero regressions detected.",
-    "model_used": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "model_used": "nvidia/Nemotron-3_5-Lightning",
     "inference_provider": "Nebius Token Factory"
   },
   {
@@ -288,7 +288,7 @@ Final event sends:
     "regressionCount": 2,
     "verdict": "REJECTED",
     "verdictReason": "Overfit to optimization set (-26% drop on holdout) and broke order cancellation and customs waiver policies.",
-    "model_used": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "model_used": "nvidia/Nemotron-3_5-Lightning",
     "inference_provider": "Nebius Token Factory"
   }
 ]
@@ -356,8 +356,8 @@ Final event sends:
     "Zero-tolerance regression firewall gate required 100% regression clearance on holdout suite before candidate promotion authorization."
   ],
   "runRecord": {
-    "primaryModel": "nvidia/llama-3.1-nemotron-70b-instruct",
-    "fastModel": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    "primaryModel": "nvidia/Nemotron-3_5-Lightning",
+    "fastModel": "nvidia/Nemotron-3_5-Lightning",
     "inferenceProvider": "Nebius Token Factory",
     "tavilyQueriesExecuted": 8,
     "tavilyQueriesGrounded": 6,
@@ -430,25 +430,25 @@ Final event sends:
   "models": [
     {
       "job": "Adversarial Probe Generation",
-      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "model": "nvidia/Nemotron-3_5-Lightning",
       "inference": "Nebius Token Factory",
       "role": "Synthesizes multi-turn stress tests across 60/20/20 splits"
     },
     {
       "job": "Causal Failure Diagnosis",
-      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "model": "nvidia/Nemotron-3_5-Lightning",
       "inference": "Nebius Token Factory",
       "role": "Constructs root-cause DAGs and identifies retrieval/prompt flaws"
     },
     {
       "job": "Judging & Holdout Verification",
-      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "model": "nvidia/Nemotron-3_5-Lightning",
       "inference": "Nebius Token Factory",
       "role": "Evaluates agent responses, audits policy adherence, gates regressions"
     },
     {
       "job": "Fast Initial Triage",
-      "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+      "model": "nvidia/Nemotron-3_5-Lightning",
       "inference": "Nebius Token Factory",
       "role": "High-throughput semantic filtering and latency measurement"
     }

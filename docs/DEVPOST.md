@@ -36,15 +36,13 @@ VeriLoop executes a continuous 6-stage autonomous reliability engineering loop:
 VeriLoop is architected around substantive integrations with leading AI infrastructure:
 
 ### 1. Nebius Token Factory
-- **Role**: High-throughput foundation model inference layer (`https://api.tokenfactory.nebius.com/v1`).
+- **Role**: High-throughput foundation model inference layer (`https://api.tokenfactory.us-central1.nebius.com/v1`).
 - **Substantive Use**: Powers the core reasoning loop. Because testing, diagnosing, and mutating complex agents requires hundreds of tokens across multi-turn interactions, Nebius Token Factory provides the ultra-low latency, OpenAI-compatible API needed for production-grade reliability loops.
 - **Resilience**: Features built-in deterministic fallback mechanisms, ensuring zero crashes or broken UI states during network partitions or offline judging demos.
 
 ### 2. NVIDIA Open-Source Models
-- **Primary Reasoning Model**: `nvidia/llama-3.1-nemotron-70b-instruct`
+- **Pipeline Models**: `nvidia/Nemotron-3_5-Lightning` (Probe, Diagnosis, Judge, Fast jobs)
   - Utilized for high-complexity cognitive tasks: adversarial test vector generation, causal graph extraction, and regression firewall arbitration.
-- **Fast Model**: `meta-llama/Meta-Llama-3.1-8B-Instruct`
-  - Utilized for rapid token classification, guardrail validation, and low-latency response scoring.
 
 ### 3. Nebius AI Cloud Infrastructure
 - **Role**: Sandboxed environment design principles that isolate candidate agent execution from evaluation harnesses, ensuring test safety and preventing data contamination across validation and holdout splits.

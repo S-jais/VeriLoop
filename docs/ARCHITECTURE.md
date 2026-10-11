@@ -35,16 +35,14 @@ VeriLoop is designed as an autonomous reliability engineering platform for AI ag
 ## 2. Infrastructure & Model Inference Topology
 
 ### 2.1 Nebius Token Factory
-- **Endpoint**: `https://api.tokenfactory.nebius.com/v1`
+- **Endpoint**: `https://api.tokenfactory.us-central1.nebius.com/v1`
 - **Authentication**: Bearer token via `NEBIUS_API_KEY`
 - **Role**: High-throughput inference layer hosting enterprise open-source foundation models.
 - **Graceful Fallback**: If unconfigured or network-isolated, VeriLoop automatically engages its deterministic evaluation provider with transparent `DEMO FALLBACK` badges in the UI.
 
 ### 2.2 NVIDIA Open-Source Foundation Models
-- **Primary Model**: `nvidia/llama-3.1-nemotron-70b-instruct`
+- **Pipeline Models**: `nvidia/Nemotron-3_5-Lightning` (Probe, Diagnosis, Judge, Fast jobs)
   - Used for substantive reasoning tasks: generating adversarial attack vectors, extracting causal graphs from execution traces, synthesizing intervention code/prompts, and arbitrating regression gates.
-- **Fast Model**: `meta-llama/Meta-Llama-3.1-8B-Instruct`
-  - Used for low-latency token evaluation, classification, and filtering.
 
 ### 2.3 Tavily AI Research
 - **Endpoint**: Tavily Search & Extract API

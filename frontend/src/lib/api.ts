@@ -3,7 +3,7 @@
  * Driven by NEXT_PUBLIC_API_URL: if unset/empty uses lib/mockData, if set calls backend.
  */
 
-import { API_BASE, IS_LIVE, NEMOTRON_MODEL_ID, INFERENCE_PROVIDER } from './config';
+import { API_BASE, IS_LIVE, NEMOTRON_MODEL_ID, FAST_MODEL_ID, INFERENCE_PROVIDER } from './config';
 import {
   getMockDashboard,
   getMockFailures,

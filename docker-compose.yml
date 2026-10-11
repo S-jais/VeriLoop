@@ -8,9 +8,9 @@ services:
       - "8000:8000"
     environment:
       - NEBIUS_API_KEY=${NEBIUS_API_KEY:-}
-      - NEBIUS_API_BASE=${NEBIUS_API_BASE:-https://api.tokenfactory.nebius.com/v1}
-      - PRIMARY_MODEL=${PRIMARY_MODEL:-nvidia/llama-3.1-nemotron-70b-instruct}
-      - FAST_MODEL=${FAST_MODEL:-meta-llama/Meta-Llama-3.1-8B-Instruct}
+      - NEBIUS_API_BASE=${NEBIUS_API_BASE:-https://api.tokenfactory.us-central1.nebius.com/v1}
+      - PRIMARY_MODEL=${PRIMARY_MODEL:-nvidia/Nemotron-3_5-Lightning}
+      - FAST_MODEL=${FAST_MODEL:-nvidia/Nemotron-3_5-Lightning}
       - TAVILY_API_KEY=${TAVILY_API_KEY:-}
       - DATABASE_URL=sqlite+aiosqlite:////app/data/veriloop.db
     volumes:
