@@ -16,8 +16,7 @@ import {
   Settings,
   X,
 } from 'lucide-react';
-
-import { DATA_SOURCE } from '@/lib/config';
+import { useDataSource } from '@/lib/useDataSource';
 
 interface NavGroup {
   label: string;
@@ -63,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
 export function Navigation() {
   const pathname = usePathname();
   const { isOpen, close } = useNav();
+  const { label: dataSourceLabel, sublabel, badgeClass } = useDataSource();
 
   useEffect(() => {
     close();
@@ -200,9 +200,9 @@ export function Navigation() {
             </Link>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <span className={`bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`}>
+            <span className={`bd ${badgeClass}`} title={sublabel}>
               <i></i>
-              {DATA_SOURCE}
+              {dataSourceLabel}
             </span>
           </div>
         </div>

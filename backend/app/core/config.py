@@ -14,9 +14,19 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     # ─── Nebius Token Factory ─────────────────────────────────────────────────
     nebius_api_key: str = ""
-    nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1"
-    nebius_primary_model: str = "nvidia/llama-3.1-nemotron-70b-instruct"
-    nebius_fast_model: str = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    nebius_base_url: str = "https://api.tokenfactory.us-central1.nebius.com/v1"
+    nebius_primary_model: str = "nvidia/Nemotron-3_5-Lightning"
+    nebius_fast_model: str = "nvidia/Nemotron-3_5-Lightning"
+
+    # Specific pipeline job mappings
+    probe_model: str = "nvidia/Nemotron-3_5-Lightning"
+    diagnosis_model: str = "nvidia/Nemotron-3_5-Lightning"
+    judge_model: str = "nvidia/Nemotron-3_5-Lightning"
+
+    # Safety limits and token caps
+    max_tokens_per_call: int = 4096
+    global_daily_budget_usd: float = 10.0
+    rate_limit_per_minute: int = 20
 
     # ─── Tavily ───────────────────────────────────────────────────────────────
     tavily_api_key: str = ""

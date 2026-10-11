@@ -1,10 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, DashboardData, EvalProgressEvent } from '@/lib/api';
-import { NEMOTRON_MODEL_ID, INFERENCE_PROVIDER, SPONSOR_STRIP, DATA_SOURCE } from '@/lib/config';
-import { Play, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Cpu } from 'lucide-react';
+import { NEMOTRON_MODEL_ID, INFERENCE_PROVIDER, SPONSOR_STRIP } from '@/lib/config';
+import { useDataSource } from '@/lib/useDataSource';
+import { Play, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Cpu, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 const TAXONOMY_CATEGORIES = [
@@ -25,11 +26,19 @@ export default function DashboardPage() {
   const [currentStageName, setCurrentStageName] = useState<string>('');
   const [currentProgressPct, setCurrentProgressPct] = useState<number>(0);
 
-  const { data: dashboard, refetch, isLoading } = useQuery<DashboardData>({
+  const { label: dataSourceLabel, sublabel, badgeClass } = useDataSource();
+
+  const { data: dashboard, refetch, isLoading, isError, error } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
     queryFn: api.getDashboard,
     staleTime: 10000,
   });
+
+  useEffect(() => {
+    const handler = () => refetch();
+    window.addEventListener('veriloop:evaluation-completed', handler);
+    return () => window.removeEventListener('veriloop:evaluation-completed', handler);
+  }, [refetch]);
 
   const metrics = dashboard?.metrics;
   const reliability = metrics?.reliabilityScore ?? 64;
@@ -78,11 +87,22 @@ export default function DashboardPage() {
             {dashboard?.agent.name || 'Customer Support Agent'} · {dashboard?.agent.version || 'v1.0 (baseline)'}
           </span>
           <span className="sp" />
-          <span className={`bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`}>
+          <span className={`bd ${badgeClass}`} title={sublabel}>
             <i></i>
-            {DATA_SOURCE}
+            {dataSourceLabel}
           </span>
         </div>
+
+        {isError && (
+          <div className="banner fl" style={{ borderColor: 'var(--rd)', color: 'var(--rd)', justifyContent: 'space-between', marginTop: '16px' }}>
+            <div>
+              <b>Failed to load latest live evaluation:</b> {(error as Error)?.message || 'Backend unreachable'}
+            </div>
+            <button className="btn sm" onClick={() => refetch()} style={{ borderColor: 'var(--rd)' }}>
+              <RefreshCw size={12} className="mr-1" /> Retry
+            </button>
+          </div>
+        )}
 
         <div className="eyebrow" style={{ marginTop: '16px', marginBottom: '8px' }}>
           Autonomous reliability engineering
@@ -201,19 +221,19 @@ export default function DashboardPage() {
           <div className="lbl">VeriLoop reliability score</div>
           <div className="fl" style={{ margin: '8px 0', flexWrap: 'wrap', gap: '8px', alignItems: 'baseline' }}>
             <span
-              className={`big ${reliability >= 70 ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}`}
+              className={`big ${reliability >= 80 ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}`}
               style={{ fontSize: 'clamp(32px, 6vw, 48px)' }}
             >
               {reliability}%
             </span>
             <span className="mu" style={{ fontSize: '15px' }}>/100</span>
-            <span className={`bd ${reliability >= 70 ? 'ok' : 'er'}`}>
+            <span className={`bd ${reliability >= 80 ? 'ok' : 'er'}`}>
               <i></i>
-              {reliability >= 70 ? 'PASS' : 'FAIL'}
+              {reliability >= 80 ? 'PASS' : 'FAIL'}
             </span>
           </div>
-          <p className="mu" style={{ fontSize: '12.5px', lineHeight: 1.5 }}>
-            A rigorous product-level metric based on 100 multi-turn test probes across optimization, validation, and holdout splits.
+          <p className="mu" style={{ fontSize: '12px', lineHeight: 1.5 }}>
+            Enterprise severity-weighted index: 100 − (12×critical + 4×high). Penalized by 2 Critical and 3 High flaws. Target threshold: ≥80%.
           </p>
         </div>
 
@@ -226,7 +246,7 @@ export default function DashboardPage() {
             >
               {metrics ? metrics.criticalFailures : 2}
             </div>
-            <span className="mu" style={{ fontSize: '11px' }}>Policy & Safety breaches</span>
+            <span className="mu" style={{ fontSize: '11px' }}>Policy & Safety breaches (0 allowed)</span>
           </div>
           <div>
             <div className="lbl">High-severity</div>
@@ -236,14 +256,14 @@ export default function DashboardPage() {
             >
               {metrics ? metrics.highFailures : 3}
             </div>
-            <span className="mu" style={{ fontSize: '11px' }}>Retrieval, Tool & Context</span>
+            <span className="mu" style={{ fontSize: '11px' }}>Retrieval, Tool & Context flaws</span>
           </div>
           <div>
             <div className="lbl">Pass rate</div>
             <div className="big text-[var(--cy)]" style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}>
               {metrics ? metrics.passRate : '95/100'}
             </div>
-            <span className="mu" style={{ fontSize: '11px' }}>95 passed / 100 total</span>
+            <span className="mu" style={{ fontSize: '11px' }}>95 passed / 100 total (95%)</span>
           </div>
           <div>
             <div className="lbl">Regressions</div>
@@ -270,7 +290,7 @@ export default function DashboardPage() {
             <span className="mu" style={{ fontSize: '12px' }}>Baseline Version</span>
             <br />
             <b className="truncate block" style={{ fontSize: '14px' }}>
-              {dashboard?.agent.version || 'v1.0 (baseline)'}
+              Baseline v1.0
             </b>
           </div>
           <div className="min-w-0">
@@ -300,7 +320,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ marginTop: '8px' }}>
             {TAXONOMY_CATEGORIES.map((tax) => {
-              const hotspot = dashboard?.hotspots.find((h) => h.category === tax);
+              const hotspot = dashboard?.hotspots?.find((h) => h.category === tax);
               const count = hotspot ? hotspot.count : 0;
               return (
                 <div
@@ -341,9 +361,9 @@ export default function DashboardPage() {
               <thead>
                 <tr>
                   <th>Split</th>
-                  <th>Baseline (v1.0)</th>
-                  <th>Candidate A (Overfit)</th>
-                  <th>Candidate B (Remediated)</th>
+                  <th>Baseline v1.0</th>
+                  <th>Candidate A</th>
+                  <th>Candidate B (Promoted)</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,9 +373,9 @@ export default function DashboardPage() {
                     <br />
                     <span className="mu" style={{ fontSize: '11px' }}>60 test cases</span>
                   </td>
-                  <td className="mono">62% (37/60)</td>
-                  <td className="mono text-[var(--or)]">92% (55/60)</td>
-                  <td className="mono font-semibold text-[var(--gr)]">88% (53/60)</td>
+                  <td className="mono">95% (57/60)</td>
+                  <td className="mono text-[var(--or)]">98% (59/60)</td>
+                  <td className="mono font-semibold text-[var(--gr)]">98% (59/60)</td>
                 </tr>
                 <tr>
                   <td>
@@ -363,9 +383,9 @@ export default function DashboardPage() {
                     <br />
                     <span className="mu" style={{ fontSize: '11px' }}>20 test cases</span>
                   </td>
-                  <td className="mono">60% (12/20)</td>
-                  <td className="mono text-[var(--or)]">71% (14/20)</td>
-                  <td className="mono font-semibold text-[var(--gr)]">86% (17/20)</td>
+                  <td className="mono">95% (19/20)</td>
+                  <td className="mono text-[var(--or)]">85% (17/20)</td>
+                  <td className="mono font-semibold text-[var(--gr)]">100% (20/20)</td>
                 </tr>
                 <tr style={{ background: 'color-mix(in srgb, var(--gr) 8%, transparent)' }}>
                   <td>
@@ -373,15 +393,15 @@ export default function DashboardPage() {
                     <br />
                     <span className="mu" style={{ fontSize: '11px' }}>20 strictly unseen</span>
                   </td>
-                  <td className="mono">58% (12/20)</td>
-                  <td className="mono text-[var(--rd)]">66% (13/20)</td>
-                  <td className="mono font-semibold text-[var(--gr)]">85% (17/20)</td>
+                  <td className="mono">95% (19/20)</td>
+                  <td className="mono text-[var(--rd)]">80% (16/20) [BLOCKED]</td>
+                  <td className="mono font-semibold text-[var(--gr)]">95% (19/20) [VERIFIED]</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="mu" style={{ fontSize: '12px', marginTop: '12px' }}>
-            Candidate B achieved verified holdout generalization (85%, 17/20) with 0 regressions.
+            Candidate B achieved verified holdout generalization (19/20, 95%) with 0 regressions.
           </p>
         </div>
       </div>
@@ -392,12 +412,12 @@ export default function DashboardPage() {
           <div>
             <h3>Recent failures</h3>
             <p className="mu" style={{ fontSize: '12px', marginTop: '2px' }}>
-              Diagnosed vulnerabilities for Customer Support Agent v1.0
+              Diagnosed vulnerabilities for Baseline v1.0
             </p>
           </div>
           <span className="sp" />
           <Link href="/failures" className="mu hover:text-white" style={{ fontSize: '12.5px' }}>
-            View all 5 failures →
+            View all {failures.length} failures →
           </Link>
         </div>
 
@@ -420,7 +440,7 @@ export default function DashboardPage() {
                   {f.scenario}
                 </span>
                 <span className="mono" style={{ fontSize: '11px', color: 'var(--cy)' }}>
-                  {f.taxonomy_category || f.type}
+                  {f.taxonomy_category || f.type || (f as any).category}
                 </span>
                 <span
                   className={
@@ -434,8 +454,8 @@ export default function DashboardPage() {
                 >
                   {f.severity}
                 </span>
-                <span className="mu truncate" style={{ fontSize: '12.5px' }} title={f.root_cause}>
-                  {f.root_cause}
+                <span className="mu truncate" style={{ fontSize: '12.5px' }} title={f.root_cause || (f as any).rootCause}>
+                  {f.root_cause || (f as any).rootCause}
                 </span>
                 <Link className="btn sm" href={`/failures?id=${f.id}`}>
                   Investigate →

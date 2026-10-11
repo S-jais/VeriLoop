@@ -4,6 +4,7 @@ import { Navigation } from '@/components/Navigation';
 import { TopBar } from '@/components/TopBar';
 import { QueryProvider } from '@/components/QueryProvider';
 import { CommandPalette } from '@/components/CommandPalette';
+import '@/lib/invariants';
 
 export const viewport: Viewport = {
   width: 'device-width',

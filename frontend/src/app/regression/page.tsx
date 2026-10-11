@@ -59,16 +59,16 @@ export default function RegressionFirewallPage() {
       <div className="g g2">
         <div className="card">
           <div className="lbl text-[var(--rd)]">Current baseline version</div>
-          <h3 style={{ marginTop: '4px' }}>v1.0 (baseline)</h3>
+          <h3 style={{ marginTop: '4px' }}>Baseline v1.0</h3>
           <span className="mono mu" style={{ fontSize: '12px' }}>
-            {CANONICAL_AGENT.name} · Flawed baseline (64% reliability)
+            {CANONICAL_AGENT.name} · Flawed baseline (64% reliability, 5 failures)
           </span>
         </div>
 
         <div className="card">
           <div className="lbl text-[var(--gr)]">Promoted candidate version</div>
           <h3 style={{ marginTop: '4px', color: 'var(--cy)' }}>
-            v1.1 (Targeted Remediation)
+            Candidate B (Promoted candidate v1.1)
           </h3>
           <span className="mono mu" style={{ fontSize: '12px' }}>
             Recency-ranked retrieval + Tavily grounding + policy guardrail
@@ -86,8 +86,8 @@ export default function RegressionFirewallPage() {
           <thead>
             <tr>
               <th>Verification Dimension</th>
-              <th>Candidate B (Remediated)</th>
-              <th>Candidate A (Overfit Prompt)</th>
+              <th>Candidate B (Promoted)</th>
+              <th>Candidate A</th>
             </tr>
           </thead>
           <tbody>
@@ -100,7 +100,7 @@ export default function RegressionFirewallPage() {
                   {gateChecked ? '0 regressions (PASS)' : '—'}
                 </td>
                 <td className="mono" style={{ color: i === 3 || i === 4 ? 'var(--rd)' : 'var(--or)' }}>
-                  {i === 3 ? '66% holdout (FAILED)' : i === 4 ? '2 regressions (BLOCKED)' : 'Warning'}
+                  {i === 3 ? '80% holdout (FAILED)' : i === 4 ? '2 policy regressions (BLOCKED)' : 'Warning'}
                 </td>
               </tr>
             ))}
@@ -112,9 +112,9 @@ export default function RegressionFirewallPage() {
       <div className="card space-y-3" style={{ borderColor: 'rgba(248, 113, 113, 0.3)' }}>
         <div className="fl" style={{ justifyContent: 'space-between' }}>
           <div>
-            <h3>Firewall Interceptions (2 Blocked Regressions)</h3>
+            <h3>Firewall Interceptions (2 Blocked Policy Regressions)</h3>
             <p className="mu" style={{ fontSize: '12.5px', marginTop: '2px' }}>
-              Candidate A attempted to overfit prompt guidelines, triggering policy violations caught by the firewall.
+              Candidate A attempted to overfit prompt guidelines, triggering 2 High-severity policy violations caught by the firewall.
             </p>
           </div>
           <span className="bd er">
@@ -126,7 +126,7 @@ export default function RegressionFirewallPage() {
           <div style={{ padding: '12px', background: 'var(--s2)', borderRadius: '3px', border: '1px solid var(--ln)' }}>
             <div className="fl" style={{ justifyContent: 'space-between' }}>
               <span className="mono text-[var(--rd)] font-bold" style={{ fontSize: '11.5px' }}>
-                REG-ORD-042 · Validation Split
+                REG-ORD-042 · Validation Split (POLICY · HIGH)
               </span>
               <span className="bd er"><i></i>BLOCKED</span>
             </div>
@@ -139,7 +139,7 @@ export default function RegressionFirewallPage() {
           <div style={{ padding: '12px', background: 'var(--s2)', borderRadius: '3px', border: '1px solid var(--ln)' }}>
             <div className="fl" style={{ justifyContent: 'space-between' }}>
               <span className="mono text-[var(--rd)] font-bold" style={{ fontSize: '11.5px' }}>
-                REG-POL-089 · Holdout Split
+                REG-POL-089 · Holdout Split (POLICY · HIGH)
               </span>
               <span className="bd er"><i></i>BLOCKED</span>
             </div>
@@ -158,7 +158,7 @@ export default function RegressionFirewallPage() {
           {gateChecked ? 'CANDIDATE B: PASS — SAFE TO DEPLOY' : 'NOT CHECKED'}
         </span>
         <p className="mu" style={{ marginTop: '12px', fontSize: '13px', maxWidth: '54ch', marginInline: 'auto' }}>
-          Candidate B passed all 5 holdout checks with 0 regressions detected. Certified safe for baseline promotion to v1.1.
+          Candidate B passed all holdout checks with 0 regressions detected. Certified safe for baseline promotion to v1.1.
         </p>
         <div className="fl" style={{ justifyContent: 'center', gap: '10px', marginTop: '18px' }}>
           <button

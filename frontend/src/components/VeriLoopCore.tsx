@@ -3,7 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { DATA_SOURCE, CANONICAL_AGENT, NEMOTRON_MODEL_ID, INFERENCE_PROVIDER } from '@/lib/config';
+import { CANONICAL_AGENT, NEMOTRON_MODEL_ID, INFERENCE_PROVIDER } from '@/lib/config';
+import { useDataSource } from '@/lib/useDataSource';
+import { CANONICAL_EVALUATION_RUN, selectMetrics } from '@/lib/selectors';
+
+const canonicalMetrics = selectMetrics(CANONICAL_EVALUATION_RUN);
 
 export interface VeriLoopCoreProps {
   demoMode?: boolean;
@@ -198,10 +202,15 @@ export function VeriLoopCore({
   const router = useRouter();
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { label: dataSourceLabel, sublabel, badgeClass } = useDataSource();
 
   const [currentStage, setCurrentStage] = useState<number>(-1); // -1 = idle/agent, 0..5 = Test..Proven
   const [paused, setPaused] = useState(false);
-  const [counters, setCounters] = useState({ p: 100, f: 5, v: 1 });
+  const [counters, setCounters] = useState({
+    p: canonicalMetrics.totalProbes,
+    f: canonicalMetrics.failedProbes,
+    v: 1, // Candidate B verified
+  });
 
   // Respect prefers-reduced-motion
   useEffect(() => {
@@ -754,11 +763,14 @@ export function VeriLoopCore({
 
       {/* Top Left Simulation Status Badge */}
       <div className="st-top">
-        <span className={`bd ar-bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`}>
+        <span className={`bd ar-bd ${badgeClass}`} title={sublabel}>
           <i></i>
           <span className="ar-badge">
-            {DATA_SOURCE}
+            {dataSourceLabel}
           </span>
+        </span>
+        <span className="mono mu hidden sm:inline" style={{ fontSize: '11px', marginLeft: '8px' }}>
+          Illustrative animation
         </span>
       </div>
 

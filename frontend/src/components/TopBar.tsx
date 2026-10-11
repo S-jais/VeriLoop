@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { DATA_SOURCE } from '@/lib/config';
+import { useDataSource } from '@/lib/useDataSource';
 import { api } from '@/lib/api';
 import { Play, RotateCcw, Search, Menu } from 'lucide-react';
 import { useNav } from '@/components/AppShell';
@@ -25,6 +25,7 @@ export function TopBar() {
   const { toggle } = useNav();
   const [resetting, setResetting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const { label: dataSourceLabel, sublabel, badgeClass } = useDataSource();
 
   // If on landing / home / auth pages, hide TopBar
   if (
@@ -92,9 +93,9 @@ export function TopBar() {
       <span className="sp" />
 
       {/* Honest Labeling Data Source Badge */}
-      <span className={`bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`} title="Execution Environment">
+      <span className={`bd ${badgeClass}`} title={sublabel}>
         <i></i>
-        {DATA_SOURCE}
+        {dataSourceLabel}
       </span>
 
       <button

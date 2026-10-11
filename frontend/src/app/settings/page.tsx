@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, SettingsData } from '@/lib/api';
+import { api, SettingsData, HealthStatus } from '@/lib/api';
 import {
   NEMOTRON_MODEL_ID,
   FAST_MODEL_ID,
@@ -10,6 +10,7 @@ import {
   EVIDENCE_PROVIDER,
   CANONICAL_SPLITS,
 } from '@/lib/config';
+import { MODEL_CONFIGS } from '@/config/models';
 import {
   RotateCcw,
   CheckCircle2,
@@ -32,6 +33,12 @@ export default function SettingsPage() {
   const { data: settings } = useQuery<SettingsData>({
     queryKey: ['settings'],
     queryFn: api.getSettings,
+  });
+
+  const { data: health } = useQuery<HealthStatus>({
+    queryKey: ['health'],
+    queryFn: api.getHealth,
+    staleTime: 30000,
   });
 
   const handleResetDemo = async () => {
@@ -123,7 +130,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {settings?.models.map((m) => (
+                  {(MODEL_CONFIGS || settings?.models || []).map((m) => (
                     <tr key={m.job}>
                       <td><b>{m.job}</b></td>
                       <td className="mono font-semibold text-[var(--cy)]" style={{ fontSize: '12px' }}>
@@ -257,20 +264,22 @@ export default function SettingsPage() {
                     <tr>
                       <td className="mono font-semibold">NEBIUS_API_KEY</td>
                       <td>Nebius Token Factory</td>
-                      <td>High-throughput inference endpoints</td>
-                      <td><span className="bd ok"><i></i>SERVER CONFIGURED</span></td>
+                      <td>High-throughput inference endpoints ({health?.primary_model || NEMOTRON_MODEL_ID})</td>
+                      <td>
+                        <span className={`bd ${health?.nebius_configured ? 'ok' : 'in'}`}>
+                          <i></i>{health?.nebius_configured ? 'SERVER CONFIGURED' : 'ACTIVE IN DEMO MODE'}
+                        </span>
+                      </td>
                     </tr>
                     <tr>
                       <td className="mono font-semibold">TAVILY_API_KEY</td>
                       <td>Tavily Search API</td>
-                      <td>External factual evidence retrieval</td>
-                      <td><span className="bd ok"><i></i>SERVER CONFIGURED</span></td>
-                    </tr>
-                    <tr>
-                      <td className="mono font-semibold">NVIDIA_API_KEY</td>
-                      <td>NVIDIA Nemotron Reasoning</td>
-                      <td>Causal DAG synthesis and judging</td>
-                      <td><span className="bd ok"><i></i>SERVER CONFIGURED</span></td>
+                      <td>External factual evidence retrieval & research grounding</td>
+                      <td>
+                        <span className={`bd ${health?.tavily_configured ? 'ok' : 'in'}`}>
+                          <i></i>{health?.tavily_configured ? 'SERVER CONFIGURED' : 'ACTIVE IN DEMO MODE'}
+                        </span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>

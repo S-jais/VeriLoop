@@ -25,6 +25,40 @@ import {
   CausalEdge,
 } from './mockData';
 
+let sessionLiveSuccess = false;
+const liveListeners = new Set<(isLive: boolean) => void>();
+
+export function isSessionLive(): boolean {
+  if (typeof window !== 'undefined') {
+    return sessionStorage.getItem('veriloop_session_live') === 'true';
+  }
+  return sessionLiveSuccess;
+}
+
+export function markSessionLiveSuccess(): void {
+  sessionLiveSuccess = true;
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('veriloop_session_live', 'true');
+    window.dispatchEvent(
+      new CustomEvent('veriloop:data-source-change', { detail: { isLive: true } })
+    );
+  }
+  liveListeners.forEach((cb) => {
+    try {
+      cb(true);
+    } catch {
+      // ignore
+    }
+  });
+}
+
+export function subscribeSessionLive(callback: (isLive: boolean) => void): () => void {
+  liveListeners.add(callback);
+  return () => {
+    liveListeners.delete(callback);
+  };
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -34,18 +68,38 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const primaryUrl = `${API_BASE}${path}`;
+  const timeoutMs = 15000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await fetch(primaryUrl, {
       headers: { 'Content-Type': 'application/json', ...options?.headers },
+      signal: options?.signal || controller.signal,
       ...options,
     });
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new ApiError(res.status, err.detail || err.error || res.statusText);
+      const msg = err.detail || err.error || `HTTP ${res.status}: ${res.statusText}`;
+      console.error(`[VeriLoop Backend Error] ${path} returned ${res.status}:`, msg);
+      throw new ApiError(res.status, msg);
     }
+
+    markSessionLiveSuccess();
     return res.json();
-  } catch (err) {
-    // If direct cross-origin fetch failed (e.g. CORS restrictions on Render), retry via same-origin Next.js rewrite
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+
+    const errorObj = err as { name?: string; message?: string };
+    if (errorObj?.name === 'AbortError') {
+      const timeoutMsg = `Request to ${path} timed out after 15 seconds.`;
+      console.error(`[VeriLoop Timeout]`, timeoutMsg);
+      throw new ApiError(408, timeoutMsg);
+    }
+
+    // Direct cross-origin fetch failed, try same-origin proxy in browser
     if (API_BASE && !primaryUrl.startsWith('/') && typeof window !== 'undefined') {
       try {
         const proxyRes = await fetch(path, {
@@ -53,12 +107,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
           ...options,
         });
         if (proxyRes.ok) {
+          markSessionLiveSuccess();
           return proxyRes.json();
         }
       } catch {
-        // Fall through to original error
+        // Fall through
       }
     }
+
+    console.warn(`[VeriLoop Request Failed] ${path}:`, errorObj?.message || err);
     throw err;
   }
 }
@@ -253,6 +310,7 @@ export function startEvaluation(
         return;
       }
 
+      markSessionLiveSuccess();
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -275,6 +333,9 @@ export function startEvaluation(
         }
       }
       onComplete?.();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('veriloop:evaluation-completed'));
+      }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         console.warn('Live evaluation stream disconnected or unavailable. Falling back to simulated stream:', err);
@@ -388,6 +449,41 @@ export async function getSettings(): Promise<MockSettingsData> {
   }
 }
 
+export interface HealthStatus {
+  status: string;
+  nebius_configured: boolean;
+  tavily_configured: boolean;
+  inference_provider: string;
+  primary_model: string;
+  fast_model: string;
+}
+
+export async function getHealth(): Promise<HealthStatus> {
+  if (!IS_LIVE) {
+    return {
+      status: 'healthy',
+      nebius_configured: true,
+      tavily_configured: true,
+      inference_provider: INFERENCE_PROVIDER,
+      primary_model: NEMOTRON_MODEL_ID,
+      fast_model: FAST_MODEL_ID,
+    };
+  }
+  try {
+    return await request<HealthStatus>('/health');
+  } catch (err) {
+    console.warn('Live getHealth failed, returning offline status:', err);
+    return {
+      status: 'offline',
+      nebius_configured: false,
+      tavily_configured: false,
+      inference_provider: `${INFERENCE_PROVIDER} (Offline)`,
+      primary_model: NEMOTRON_MODEL_ID,
+      fast_model: FAST_MODEL_ID,
+    };
+  }
+}
+
 // ─── Universal `api` Object & Backward Compatibility ────────────────────────
 
 export const api = {
@@ -400,6 +496,7 @@ export const api = {
   runTavilyQuery,
   getReport,
   getSettings,
+  getHealth,
 
   // Additional helper methods & compatibility wrappers
   listEvidence: async () => {

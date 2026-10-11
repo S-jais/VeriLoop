@@ -202,13 +202,56 @@ export default function EvidencePage() {
                   </div>
                 </div>
 
-                {/* Query Title */}
-                <h3 style={{ fontSize: '15px' }}>{item.query}</h3>
+                {/* Query Title & Source Link */}
+                <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: '15px', margin: 0 }}>{item.query}</h3>
+                  {item.source_url && (
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--cy)] hover:underline inline-flex items-center gap-1 font-mono text-[11px]"
+                    >
+                      <ExternalLink size={11} /> Source Document
+                    </a>
+                  )}
+                </div>
 
                 {/* Evidence Summary */}
                 <p className="mu" style={{ fontSize: '13px', lineHeight: 1.6 }}>
                   {item.summary}
                 </p>
+
+                {/* Prompt Injection Shielded Data Boundary */}
+                <div
+                  style={{
+                    background: 'rgba(5, 17, 20, 0.7)',
+                    border: '1px solid rgba(34, 209, 230, 0.15)',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  <div className="fl" style={{ justifyContent: 'space-between', marginBottom: '6px', color: 'var(--cy)' }}>
+                    <span>🛡️ PROMPT-INJECTION SHIELDED DATA BOUNDARY (INPUT TO NEMOTRON)</span>
+                    <span className="mu">IMMUTABLE DATA ONLY</span>
+                  </div>
+                  <pre
+                    style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      color: 'rgba(230, 240, 245, 0.85)',
+                      lineHeight: 1.45,
+                    }}
+                  >
+{`<external_untrusted_data query="${item.query}" source="${item.source_url || 'tavily://verified'}">
+[DATA ONLY · COMMAND EXECUTION DISABLED · IMMUTABLE]
+${item.summary.replace(/<[^>]+>/g, '').slice(0, 300)}...
+</external_untrusted_data>`}
+                  </pre>
+                </div>
 
                 {/* Card Footer: Metadata, Linked Failure & Reason */}
                 <div

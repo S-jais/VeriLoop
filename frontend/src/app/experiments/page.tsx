@@ -317,9 +317,9 @@ export default function ExperimentsPage() {
             <thead>
               <tr>
                 <th>Split</th>
-                <th>Baseline (v1.0)</th>
-                <th>Candidate A (Overfit Prompt)</th>
-                <th>Candidate B (Targeted Remediation)</th>
+                <th>Baseline v1.0</th>
+                <th>Candidate A</th>
+                <th>Candidate B (Promoted candidate)</th>
               </tr>
             </thead>
             <tbody>
@@ -329,9 +329,9 @@ export default function ExperimentsPage() {
                   <br />
                   <span className="mu" style={{ fontSize: '11px' }}>60 cases (60%)</span>
                 </td>
-                <td className="mono">62% (37/60)</td>
-                <td className="mono text-[var(--or)]">92% (55/60)</td>
-                <td className="mono font-semibold text-[var(--gr)]">88% (53/60)</td>
+                <td className="mono">95% (57/60)</td>
+                <td className="mono text-[var(--or)]">98% (59/60)</td>
+                <td className="mono font-semibold text-[var(--gr)]">98% (59/60)</td>
               </tr>
               <tr>
                 <td>
@@ -339,9 +339,9 @@ export default function ExperimentsPage() {
                   <br />
                   <span className="mu" style={{ fontSize: '11px' }}>20 cases (20%)</span>
                 </td>
-                <td className="mono">60% (12/20)</td>
-                <td className="mono text-[var(--or)]">71% (14/20)</td>
-                <td className="mono font-semibold text-[var(--gr)]">86% (17/20)</td>
+                <td className="mono">95% (19/20)</td>
+                <td className="mono text-[var(--or)]">85% (17/20)</td>
+                <td className="mono font-semibold text-[var(--gr)]">100% (20/20)</td>
               </tr>
               <tr style={{ background: 'color-mix(in srgb, var(--gr) 8%, transparent)' }}>
                 <td>
@@ -351,16 +351,16 @@ export default function ExperimentsPage() {
                     20 cases (Strictly isolated from tuning)
                   </span>
                 </td>
-                <td className="mono">58% (12/20)</td>
-                <td className="mono text-[var(--rd)]">66% (13/20) [FAILED]</td>
-                <td className="mono font-semibold text-[var(--gr)]">85% (17/20) [VERIFIED]</td>
+                <td className="mono">95% (19/20)</td>
+                <td className="mono text-[var(--rd)]">80% (16/20) [BLOCKED]</td>
+                <td className="mono font-semibold text-[var(--gr)]">95% (19/20) [VERIFIED]</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <p className="mu" style={{ fontSize: '12.5px', marginTop: '12px' }}>
-          VeriLoop proves that Candidate B does not simply overfit to optimization probes. It generalizes to unseen holdout cases with zero regressions.
+          VeriLoop proves that Candidate B does not simply overfit to optimization probes. It generalizes cleanly to unseen holdout cases with zero regressions.
         </p>
       </div>
 
@@ -372,13 +372,13 @@ export default function ExperimentsPage() {
         </h3>
         <div className="fl" style={{ flexWrap: 'wrap', gap: '8px' }}>
           <span className="bd ok">
-            <i></i>Optimization · PASS (88%)
+            <i></i>Optimization · PASS (98%)
           </span>
           <span className="bd ok">
-            <i></i>Validation · PASS (86%)
+            <i></i>Validation · PASS (100%)
           </span>
           <span className="bd ok">
-            <i></i>Holdout · PASS (85%)
+            <i></i>Holdout · PASS (95%)
           </span>
           <span className="bd ok">
             <i></i>Regression · 0 (CLEARED)

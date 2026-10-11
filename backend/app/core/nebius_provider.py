@@ -61,55 +61,96 @@ class NebiusTokenFactoryProvider:
         task_label: str = "generate_text",
     ) -> ModelCallResult:
         """
-        Generate free-form text from the NVIDIA model via Nebius Token Factory.
+        Generate text from the NVIDIA model via Nebius Token Factory.
+        Includes token caps, exponential backoff on 429/5xx, and fallback to fast model.
         """
         if not settings.nebius_api_key:
             raise RuntimeError(
                 "NEBIUS_API_KEY is not configured. Cannot call Nebius Token Factory."
             )
 
-        model = model or settings.nebius_primary_model
-        start = time.time()
+        # Cap tokens per call
+        effective_max_tokens = min(max_tokens, settings.max_tokens_per_call)
+        target_model = model or settings.nebius_primary_model
+        fallback_model = settings.nebius_fast_model
+        models_to_try = [target_model]
+        if fallback_model != target_model:
+            models_to_try.append(fallback_model)
 
-        logger.info(
-            "nebius_call_start task=%s model=%s messages=%d",
-            task_label, model, len(messages)
-        )
+        last_exception = None
 
-        try:
-            response = await self._client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            latency_ms = int((time.time() - start) * 1000)
-            content = response.choices[0].message.content or ""
-            usage = response.usage
+        for current_model in models_to_try:
+            start = time.time()
+            max_attempts = 3
 
-            logger.info(
-                "nebius_call_success task=%s model=%s latency_ms=%d "
-                "prompt_tokens=%d completion_tokens=%d",
-                task_label, model, latency_ms,
-                usage.prompt_tokens if usage else 0,
-                usage.completion_tokens if usage else 0,
-            )
+            for attempt in range(max_attempts):
+                try:
+                    logger.info(
+                        "nebius_call_start task=%s model=%s attempt=%d/%d messages=%d",
+                        task_label, current_model, attempt + 1, max_attempts, len(messages)
+                    )
 
-            return ModelCallResult(
-                content=content,
-                model=model,
-                usage_prompt_tokens=usage.prompt_tokens if usage else 0,
-                usage_completion_tokens=usage.completion_tokens if usage else 0,
-                latency_ms=latency_ms,
-            )
+                    response = await self._client.chat.completions.create(
+                        model=current_model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=effective_max_tokens,
+                    )
 
-        except Exception as e:
-            latency_ms = int((time.time() - start) * 1000)
-            logger.error(
-                "nebius_call_failure task=%s model=%s latency_ms=%d error=%s",
-                task_label, model, latency_ms, str(e)
-            )
-            raise
+                    latency_ms = int((time.time() - start) * 1000)
+                    content = response.choices[0].message.content or ""
+                    usage = response.usage
+                    p_toks = usage.prompt_tokens if usage else 0
+                    c_toks = usage.completion_tokens if usage else 0
+                    cost_usd = (p_toks * 0.20 + c_toks * 0.60) / 1_000_000
+
+                    logger.info(
+                        "nebius_call_success task=%s model=%s latency_ms=%d prompt_tokens=%d completion_tokens=%d cost_usd=%.6f",
+                        task_label, current_model, latency_ms, p_toks, c_toks, cost_usd
+                    )
+
+                    return ModelCallResult(
+                        content=content,
+                        model=current_model,
+                        usage_prompt_tokens=p_toks,
+                        usage_completion_tokens=c_toks,
+                        latency_ms=latency_ms,
+                    )
+
+                except Exception as e:
+                    last_exception = e
+                    status_code = getattr(e, "status_code", None)
+                    err_str = str(e).lower()
+                    is_retryable = (
+                        status_code in (429, 500, 502, 503, 504)
+                        or "rate limit" in err_str
+                        or "timeout" in err_str
+                        or "connection error" in err_str
+                    )
+
+                    if is_retryable and attempt < max_attempts - 1:
+                        backoff_seconds = (2 ** attempt) * 0.5 + (0.1 * attempt)
+                        logger.warning(
+                            "nebius_call_retryable_error task=%s model=%s status=%s error=%s backing off %.1fs",
+                            task_label, current_model, status_code, str(e), backoff_seconds
+                        )
+                        import asyncio
+                        await asyncio.sleep(backoff_seconds)
+                    else:
+                        logger.error(
+                            "nebius_call_attempt_failed task=%s model=%s error=%s",
+                            task_label, current_model, str(e)
+                        )
+                        break
+
+            # If primary model exhausted attempts, log fallback
+            if current_model != models_to_try[-1]:
+                logger.warning(
+                    "Primary model %s failed. Falling back to %s for task=%s",
+                    current_model, models_to_try[-1], task_label
+                )
+
+        raise RuntimeError(f"All model attempts failed for {task_label}: {last_exception}")
 
     async def generate_structured(
         self,
@@ -137,7 +178,7 @@ class NebiusTokenFactoryProvider:
         schema_instruction = (
             f"\n\nYou MUST respond with ONLY valid JSON that conforms to this schema:\n"
             f"{json.dumps(schema_class.model_json_schema(), indent=2)}\n"
-            f"Do not include any text before or after the JSON object."
+            f"Do not include any markdown fences, conversational text, or explanation before or after the JSON object."
         )
 
         enhanced_messages = list(messages)
@@ -158,11 +199,18 @@ class NebiusTokenFactoryProvider:
                     task_label=f"{task_label}_attempt_{attempt}",
                 )
 
-                # Extract JSON from response (handle markdown code fences)
+                # Extract JSON from response (handle markdown code fences or embedded JSON)
                 raw = result.content.strip()
-                if raw.startswith("```"):
-                    lines = raw.split("\n")
-                    raw = "\n".join(lines[1:-1]).strip()
+                if "```json" in raw:
+                    raw = raw.split("```json", 1)[1].split("```", 1)[0].strip()
+                elif "```" in raw:
+                    raw = raw.split("```", 1)[1].split("```", 1)[0].strip()
+
+                # If wrapped in non-JSON text, extract substring between first '{' and last '}'
+                first_brace = raw.find("{")
+                last_brace = raw.rfind("}")
+                if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+                    raw = raw[first_brace : last_brace + 1]
 
                 parsed = json.loads(raw)
                 validated = schema_class.model_validate(parsed)

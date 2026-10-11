@@ -12,6 +12,16 @@ import {
   CANONICAL_SPLITS,
   CANONICAL_EXPERIMENTS,
 } from './config';
+import {
+  CANONICAL_EVALUATION_RUN,
+  selectMetrics,
+  selectHotspots,
+  selectSplits,
+  selectExperimentTable,
+  selectCandidates,
+  selectRecentFailures,
+  selectReportData,
+} from './selectors';
 
 export interface DashboardData {
   agent: {
@@ -600,7 +610,7 @@ export const MOCK_EVAL_STREAM_EVENTS: MockEvalStreamEvent[] = [
     model: NEMOTRON_MODEL_ID,
     provider: INFERENCE_PROVIDER,
     timestamp: '00:02.800',
-    message: `Evaluating candidates on 20 validation cases. Candidate B scored 86% (17/20). Candidate A scored 71% (14/20) with signs of overfitting.`,
+    message: `Evaluating candidates on 20 validation cases. Candidate B scored 100% (20/20). Candidate A scored 85% (17/20) with signs of overfitting.`,
   },
   {
     stage: 'Prove',
@@ -609,7 +619,7 @@ export const MOCK_EVAL_STREAM_EVENTS: MockEvalStreamEvent[] = [
     model: NEMOTRON_MODEL_ID,
     provider: INFERENCE_PROVIDER,
     timestamp: '00:03.400',
-    message: `Executing Holdout Regression Firewall on 20 strictly isolated cases. Candidate B achieved 85% (17/20) with 0 regressions. Candidate A triggered 2 regressions (REG-ORD-042, REG-POL-089).`,
+    message: `Executing Holdout Regression Firewall on 20 strictly isolated cases. Candidate B achieved 95% (19/20) with 0 regressions. Candidate A scored 80% (16/20) and triggered 2 policy regressions (REG-ORD-042, REG-POL-089).`,
   },
   {
     stage: 'completed',
@@ -625,94 +635,99 @@ export const MOCK_EVAL_STREAM_EVENTS: MockEvalStreamEvent[] = [
 // ─── Exported Mock Data Functions ───────────────────────────────────────────
 
 export function getMockDashboard(): DashboardData {
+  const metrics = selectMetrics(CANONICAL_EVALUATION_RUN);
+  const splits = selectSplits(CANONICAL_EVALUATION_RUN, 'Baseline v1.0');
+  const hotspots = selectHotspots(CANONICAL_EVALUATION_RUN);
+  const recentFailures = selectRecentFailures(CANONICAL_EVALUATION_RUN, 5);
+  const experimentRows = selectExperimentTable(CANONICAL_EVALUATION_RUN);
+
   return {
     agent: {
-      id: CANONICAL_AGENT.id,
-      name: CANONICAL_AGENT.name,
-      version: CANONICAL_AGENT.baselineVersion,
-      description: CANONICAL_AGENT.description,
+      id: CANONICAL_EVALUATION_RUN.agent.id,
+      name: CANONICAL_EVALUATION_RUN.agent.name,
+      version: CANONICAL_EVALUATION_RUN.baselineVersion,
+      description: CANONICAL_EVALUATION_RUN.agent.description,
     },
     metrics: {
-      reliabilityScore: CANONICAL_EXPERIMENTS.baseline.reliabilityScore,
-      passRate: CANONICAL_EXPERIMENTS.baseline.passRate,
-      passedCount: 95,
-      totalCount: CANONICAL_SPLITS.total,
-      criticalFailures: CANONICAL_EXPERIMENTS.baseline.criticalFailures,
-      highFailures: CANONICAL_EXPERIMENTS.baseline.highFailures,
-      regressions: CANONICAL_EXPERIMENTS.baseline.regressions,
+      reliabilityScore: metrics.reliabilityScore,
+      passRate: metrics.passRate,
+      passedCount: metrics.passedProbes,
+      totalCount: metrics.totalProbes,
+      criticalFailures: metrics.criticalFailures,
+      highFailures: metrics.highFailures,
+      regressions: metrics.regressionsCount,
     },
     splits: {
-      optimization: {
-        count: CANONICAL_SPLITS.optimization.count,
-        pct: CANONICAL_SPLITS.optimization.pct,
-      },
-      validation: {
-        count: CANONICAL_SPLITS.validation.count,
-        pct: CANONICAL_SPLITS.validation.pct,
-      },
-      holdout: {
-        count: CANONICAL_SPLITS.holdout.count,
-        pct: CANONICAL_SPLITS.holdout.pct,
-      },
+      optimization: { count: splits.optimization.cases, pct: splits.optimization.pct },
+      validation: { count: splits.validation.cases, pct: splits.validation.pct },
+      holdout: { count: splits.holdout.cases, pct: splits.holdout.pct },
     },
     models: {
-      primary: NEMOTRON_MODEL_ID,
-      inferenceProvider: INFERENCE_PROVIDER,
+      primary: CANONICAL_EVALUATION_RUN.modelsUsedPerStep.holdoutJudging.modelId,
+      inferenceProvider: CANONICAL_EVALUATION_RUN.modelsUsedPerStep.holdoutJudging.provider,
     },
-    hotspots: [
-      { category: 'RETRIEVAL_FAILURE', count: 1, severity: 'HIGH' },
-      { category: 'POLICY_FAILURE', count: 1, severity: 'CRITICAL' },
-      { category: 'TOOL_FAILURE', count: 1, severity: 'HIGH' },
-      { category: 'SAFETY_FAILURE', count: 1, severity: 'CRITICAL' },
-      { category: 'CONTEXT_FAILURE', count: 1, severity: 'HIGH' },
-    ],
-    recentFailures: MOCK_FAILURES,
+    hotspots: hotspots.filter((h) => h.count > 0),
+    recentFailures: recentFailures as any,
     experimentTable: {
-      cols: ['Baseline (v1.0)', 'Candidate A (Prompt Override)', 'Candidate B (Remediated)'],
+      cols: ['Baseline v1.0', 'Candidate A', 'Candidate B'],
       interventions: [
         '— Flawed baseline',
         'PROMPT · Aggressive override instructions',
-        'RETRIEVAL + PROMPT · Recency ranking & Tavily grounding',
+        'RETRIEVAL + PROMPT + GUARDRAIL · Recency ranking & Tavily grounding',
       ],
-      rows: [
-        {
-          split: 'Optimization 60% (60 cases)',
-          baseline: '62% (37/60)',
-          candidateA: '92% (55/60)',
-          candidateB: '88% (53/60)',
-        },
-        {
-          split: 'Validation 20% (20 cases)',
-          baseline: '60% (12/20)',
-          candidateA: '71% (14/20)',
-          candidateB: '86% (17/20)',
-        },
-        {
-          split: 'Holdout 20% (20 cases)',
-          note: 'Strictly isolated from tuning',
-          baseline: '58% (12/20)',
-          candidateA: '66% (13/20)',
-          candidateB: '85% (17/20)',
-        },
-      ],
+      rows: experimentRows.map((r) => ({
+        split: r.name,
+        note: r.subtitle,
+        baseline: r.baselineStr,
+        candidateA: r.candidateAStr,
+        candidateB: r.candidateBStr,
+      })),
     },
   };
 }
 
 export function getMockFailures(evalId?: string): MockFailure[] {
-  return MOCK_FAILURES;
+  return CANONICAL_EVALUATION_RUN.failures as any;
 }
 
 export function getMockFailure(id: string): MockFailure | undefined {
-  return MOCK_FAILURES.find((f) => f.id === id) || MOCK_FAILURES[0];
+  const f = CANONICAL_EVALUATION_RUN.failures.find((f) => f.id === id);
+  return (f || CANONICAL_EVALUATION_RUN.failures[0]) as any;
 }
 
 export function getMockExperiments(): MockExperimentCandidate[] {
-  return MOCK_EXPERIMENT_CANDIDATES;
+  const cands = selectCandidates(CANONICAL_EVALUATION_RUN);
+  return cands.map((c) => ({
+    id: c.id,
+    name: c.name,
+    version: c.version,
+    interventionType: c.interventionType,
+    description: c.description,
+    optimizationScore: c.optimizationScore,
+    validationScore: c.validationScore,
+    holdoutScore: c.holdoutScore,
+    criticalFailures: c.name === 'Candidate A' ? 1 : 0,
+    regressionCount: c.regressionCount,
+    verdict: c.verdict as 'VERIFIED' | 'REJECTED',
+    verdictReason: c.verdictReason,
+    model_used: CANONICAL_EVALUATION_RUN.modelsUsedPerStep.holdoutJudging.modelId,
+    inference_provider: CANONICAL_EVALUATION_RUN.modelsUsedPerStep.holdoutJudging.provider,
+  }));
 }
 
 export function getMockEvidence(): MockEvidenceItem[] {
-  return MOCK_EVIDENCE_ITEMS;
+  return CANONICAL_EVALUATION_RUN.tavilyEvidence.map((e) => ({
+    id: e.id,
+    query: e.query,
+    source: e.source,
+    source_url: e.sourceUrl,
+    summary: e.summary,
+    timestamp: e.timestamp,
+    relevance: e.relevance,
+    status: e.status,
+    linked_failure_id: e.linkedFailureId,
+    reason: e.reason,
+  }));
 }
 
 export function executeMockTavilyQuery(query: string, reason?: string, failureId?: string): MockEvidenceItem {
@@ -728,86 +743,32 @@ export function executeMockTavilyQuery(query: string, reason?: string, failureId
     linked_failure_id: failureId || 'FAIL-RET-101',
     reason: reason || 'Live research query execution for agent policy verification',
   };
-  MOCK_EVIDENCE_ITEMS.unshift(newItem);
   return newItem;
 }
 
 export function getMockReport(): MockReportData {
+  const r = selectReportData(CANONICAL_EVALUATION_RUN);
   return {
-    reportId: 'AUDIT-REP-2024-10-CS01',
-    generatedAt: new Date().toISOString(),
-    agentName: CANONICAL_AGENT.name,
-    baselineVersion: CANONICAL_AGENT.baselineVersion,
-    promotedVersion: CANONICAL_AGENT.candidateVersionB,
-    sampleSize: CANONICAL_SPLITS.total,
-    splits: CANONICAL_SPLITS,
-    methodNotes: [
-      'Strict 60/20/20 train-test-holdout partitioning. Holdout probes remained completely unexposed during candidate generation.',
-      'All root cause causal diagnoses were synthesized via NVIDIA Nemotron inference hosted on Nebius Token Factory.',
-      'Zero-tolerance regression firewall gate required 100% regression clearance on holdout suite before candidate promotion authorization.',
-    ],
-    runRecord: {
-      primaryModel: NEMOTRON_MODEL_ID,
-      fastModel: FAST_MODEL_ID,
-      inferenceProvider: INFERENCE_PROVIDER,
-      tavilyQueriesExecuted: 8,
-      tavilyQueriesGrounded: 6,
-      candidatesTested: 2,
-      regressionsBlocked: 2,
-    },
-    dimensions: [
-      {
-        dimension: 'Overall Reliability Score',
-        baseline: '64% (64/100)',
-        candidate: '87% (87/100)',
-        delta: '+23%',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Pass Rate (Total 100 probes)',
-        baseline: '95/100 (95%)',
-        candidate: '98/100 (98%)',
-        delta: '+3%',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Critical Failures',
-        baseline: '2 failures',
-        candidate: '0 failures',
-        delta: '-2 (100% resolved)',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Optimization Split (60 cases)',
-        baseline: '62% (37/60)',
-        candidate: '88% (53/60)',
-        delta: '+26%',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Validation Split (20 cases)',
-        baseline: '60% (12/20)',
-        candidate: '86% (17/20)',
-        delta: '+26%',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Holdout Generalization (20 cases)',
-        baseline: '58% (12/20)',
-        candidate: '85% (17/20)',
-        delta: '+27%',
-        status: 'PASS',
-      },
-      {
-        dimension: 'Regression Firewall Checks',
-        baseline: 'N/A',
-        candidate: '0 regressions detected',
-        delta: 'CLEARED',
-        status: 'PASS',
-      },
-    ],
-    regressions: MOCK_REGRESSION_CASES,
-    verdict: 'VERIFIED',
+    reportId: r.reportId,
+    generatedAt: r.generatedAt,
+    agentName: r.agentName,
+    baselineVersion: r.baselineVersion,
+    promotedVersion: r.promotedVersion,
+    sampleSize: r.sampleSize,
+    splits: r.splits as any,
+    methodNotes: r.methodNotes,
+    runRecord: r.runRecord,
+    dimensions: r.dimensions,
+    regressions: r.regressions.map((reg) => ({
+      id: reg.caseId,
+      test_scenario: reg.scenario,
+      split: reg.split,
+      broken_by: reg.candidate,
+      expected: reg.expected,
+      observed: reg.observed,
+      impact: reg.impact,
+    })),
+    verdict: r.verdict,
   };
 }
 
@@ -815,40 +776,20 @@ export function getMockSettings(): MockSettingsData {
   return {
     workspace: {
       name: 'VeriLoop Autonomous Fleet',
-      agentName: CANONICAL_AGENT.name,
+      agentName: CANONICAL_EVALUATION_RUN.agent.name,
       environment: 'Hackathon Production Demo',
     },
-    models: [
-      {
-        job: 'Adversarial Probe Generation',
-        model: NEMOTRON_MODEL_ID,
-        inference: INFERENCE_PROVIDER,
-        role: 'Synthesizes multi-turn stress tests across 60/20/20 splits',
-      },
-      {
-        job: 'Causal Failure Diagnosis',
-        model: NEMOTRON_MODEL_ID,
-        inference: INFERENCE_PROVIDER,
-        role: 'Constructs root-cause DAGs and identifies retrieval/prompt flaws',
-      },
-      {
-        job: 'Judging & Holdout Verification',
-        model: NEMOTRON_MODEL_ID,
-        inference: INFERENCE_PROVIDER,
-        role: 'Evaluates agent responses, audits policy adherence, gates regressions',
-      },
-      {
-        job: 'Fast Initial Triage',
-        model: FAST_MODEL_ID,
-        inference: INFERENCE_PROVIDER,
-        role: 'High-throughput semantic filtering and latency measurement',
-      },
-    ],
+    models: Object.values(CANONICAL_EVALUATION_RUN.modelsUsedPerStep).map((m) => ({
+      job: m.job,
+      model: m.modelId,
+      inference: m.provider,
+      role: m.role,
+    })),
     splits: {
-      optimization: CANONICAL_SPLITS.optimization.count,
-      validation: CANONICAL_SPLITS.validation.count,
-      holdout: CANONICAL_SPLITS.holdout.count,
-      minProbes: CANONICAL_SPLITS.total,
+      optimization: 60,
+      validation: 20,
+      holdout: 20,
+      minProbes: 100,
       regressionThreshold: 0,
     },
     apiKeysNote:

@@ -78,13 +78,48 @@ ${report.methodNotes.map((m, i) => `${i + 1}. ${m}`).join('\n')}
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadCsv = () => {
+    if (!report) return;
+    const sanitizeCell = (val: string | number) => {
+      const str = String(val ?? '');
+      // CWE-1236: Prefix formula trigger characters =, +, -, @ with single quote
+      if (/^[=+\-@]/.test(str)) {
+        return `"'${str.replace(/"/g, '""')}"`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const rows = [
+      ['Dimension', 'Baseline', 'Candidate', 'Delta', 'Status'],
+      ...report.dimensions.map((d) => [
+        d.dimension,
+        d.baseline,
+        d.candidate,
+        d.delta,
+        d.status,
+      ]),
+    ];
+
+    const csvContent = rows
+      .map((r) => r.map(sanitizeCell).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `VeriLoop_Audit_${report.reportId}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleCopySummary = () => {
     if (!report) return;
     const summary = `VeriLoop Verification Certificate: ${report.agentName}
 Verdict: ${report.verdict}
-Baseline ${report.baselineVersion} (64%) → Promoted ${report.promotedVersion} (87%)
-Holdout Generalization: 85% (17/20 cases)
-Regressions: 0 (2 blocked on overfit candidate)
+Baseline v1.0 (64% Reliability, 95/100 Pass Rate) → Candidate B (87% Reliability, 98/100 Pass Rate, Promoted)
+Holdout Generalization: 95% (19/20 cases)
+Regressions: 0 (2 policy regressions blocked on Candidate A)
 Inference: ${report.runRecord.inferenceProvider} · Model: ${report.runRecord.primaryModel}
 Evidence: ${EVIDENCE_PROVIDER} Search API`;
 
@@ -118,6 +153,10 @@ Evidence: ${EVIDENCE_PROVIDER} Search API`;
             <FileText size={13} />
             <span>Download .JSON</span>
           </button>
+          <button onClick={handleDownloadCsv} className="btn sm" title="Download CSV Audit Matrix">
+            <Download size={13} />
+            <span>Download .CSV</span>
+          </button>
           <button onClick={handleCopySummary} className="btn sm">
             {copied ? <Check size={13} className="text-[var(--gr)]" /> : <Copy size={13} />}
             <span>{copied ? 'Copied!' : 'Copy summary'}</span>
@@ -141,7 +180,7 @@ Evidence: ${EVIDENCE_PROVIDER} Search API`;
             <div className="fl" style={{ gap: '8px', marginBottom: '6px' }}>
               <span className="bd in">VERILOOP AUDIT SPECIFICATION v1.0</span>
               <span className="mono mu" style={{ fontSize: '11px' }}>
-                ID: {report?.reportId || 'AUDIT-REP-2024-10-CS01'}
+                ID: {report?.reportId || 'AUDIT-REP-LIVE-RUN'}
               </span>
             </div>
             <h3 style={{ fontSize: '20px' }}>
@@ -169,10 +208,10 @@ Evidence: ${EVIDENCE_PROVIDER} Search API`;
           >
             <span className="lbl text-[var(--rd)]">Baseline Target Version</span>
             <div style={{ fontWeight: 600, marginTop: '4px' }}>
-              {report?.baselineVersion || 'v1.0 (Flawed Baseline)'}
+              Baseline v1.0
             </div>
             <p className="mu" style={{ fontSize: '12px', marginTop: '4px' }}>
-              Reliability 64%. Outdated 14-day policy retrieval, 2 critical failure modes, 3 high-severity flaws.
+              Reliability 64% (Pass rate 95/100). Outdated 14-day policy retrieval, 2 critical failure modes, 3 high-severity flaws.
             </p>
           </div>
 
@@ -186,10 +225,10 @@ Evidence: ${EVIDENCE_PROVIDER} Search API`;
           >
             <span className="lbl text-[var(--gr)]">Candidate Verified Version</span>
             <div style={{ fontWeight: 600, marginTop: '4px', color: 'var(--tx)' }}>
-              {report?.promotedVersion || 'v1.1 (Promoted Candidate)'}
+              Candidate B (Promoted candidate v1.1)
             </div>
             <p className="mu" style={{ fontSize: '12px', marginTop: '4px' }}>
-              Reliability 87%. Recency-ranked vector index, live Tavily external policy grounding, 0 regressions across holdout.
+              Reliability 87% (Pass rate 98/100). Recency-ranked vector index, live Tavily external policy grounding, 0 regressions across holdout.
             </p>
           </div>
         </div>

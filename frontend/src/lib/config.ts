@@ -3,17 +3,22 @@
  * Single source of truth for model identifiers, inference providers, and environment flags.
  */
 
-// NVIDIA Nemotron model ID - judges/users can configure via NEXT_PUBLIC_NEMOTRON_MODEL_ID
-export const NEMOTRON_MODEL_ID =
-  process.env.NEXT_PUBLIC_NEMOTRON_MODEL_ID || 'nvidia/llama-3.1-nemotron-70b-instruct';
+import {
+  PROBE_MODEL,
+  FAST_MODEL,
+  INFERENCE_PROVIDER_NAME,
+  REASONING_PROVIDER_NAME,
+} from '@/config/models';
+
+// NVIDIA Nemotron model ID - single source of truth from config/models.ts
+export const NEMOTRON_MODEL_ID = PROBE_MODEL;
 
 // Fast model for high-throughput initial classification
-export const FAST_MODEL_ID =
-  process.env.NEXT_PUBLIC_FAST_MODEL_ID || 'meta-llama/Meta-Llama-3.1-8B-Instruct';
+export const FAST_MODEL_ID = FAST_MODEL;
 
 // Sponsor tool naming constants
-export const INFERENCE_PROVIDER = 'Nebius Token Factory';
-export const REASONING_PROVIDER = 'NVIDIA Nemotron';
+export const INFERENCE_PROVIDER = INFERENCE_PROVIDER_NAME;
+export const REASONING_PROVIDER = REASONING_PROVIDER_NAME;
 export const EVIDENCE_PROVIDER = 'Tavily';
 
 // Sponsor strip text for landing and dashboard footers

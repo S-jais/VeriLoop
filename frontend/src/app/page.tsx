@@ -7,15 +7,44 @@ import { Play } from 'lucide-react';
 import { VeriLoopCore } from '@/components/VeriLoopCore';
 import { NEMOTRON_MODEL_ID, SPONSOR_STRIP } from '@/lib/config';
 
+export const DEMO_VIDEO_URL = 'https://youtu.be/placeholder-veriloop-demo';
+export const GITHUB_REPO_URL = 'https://github.com/S-jais/VeriLoop';
+export const README_URL = 'https://github.com/S-jais/VeriLoop#readme';
+export const HACKATHON_TRACK = 'Track: Coding and Agentic Engineering';
+
 const FAILURE_MODES = [
-  'Outdated knowledge',
-  'Bad tool selection',
-  'Missing context',
-  'Policy violations',
-  'Prompt injection',
-  'Retrieval failures',
-  'Incorrect reasoning',
-  'Workflow failures',
+  {
+    title: 'Outdated knowledge',
+    desc: 'Vector stores retrieve stale documentation or superseded policies lacking temporal recency ranking.',
+  },
+  {
+    title: 'Bad tool selection',
+    desc: 'Agents invoke wrong API functions or pass malformed arguments causing unhandled schema validation errors.',
+  },
+  {
+    title: 'Missing context',
+    desc: 'Token window sliding and aggressive compression silently truncate user constraints mid-conversation.',
+  },
+  {
+    title: 'Policy violations',
+    desc: 'Urgent customer requests trick the agent into bypassing business logic and refund authorization gates.',
+  },
+  {
+    title: 'Prompt injection',
+    desc: 'Adversarial inputs break system prompt encapsulation to extract coupons or trigger admin overrides.',
+  },
+  {
+    title: 'Retrieval failures',
+    desc: 'Embedding search retrieves semantically similar but legally obsolete clauses instead of current amendments.',
+  },
+  {
+    title: 'Incorrect reasoning',
+    desc: 'Multi-step conditional logic breaks down during complex exchanges, resulting in unauthorized promises.',
+  },
+  {
+    title: 'Workflow failures',
+    desc: 'Unhandled exceptions and tool timeouts leave customer sessions stuck in inconsistent state machines.',
+  },
 ];
 
 const LOOP_STAGES = [
@@ -171,8 +200,11 @@ export default function HomePage() {
           style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
         >
           {FAILURE_MODES.map((fm) => (
-            <div key={fm} className="card">
-              <h3>{fm}</h3>
+            <div key={fm.title} className="card space-y-2">
+              <h3>{fm.title}</h3>
+              <p className="mu" style={{ fontSize: '13px', lineHeight: 1.5 }}>
+                {fm.desc}
+              </p>
             </div>
           ))}
         </div>
@@ -288,6 +320,65 @@ export default function HomePage() {
           Run Evaluation
         </button>
       </section>
+
+      {/* Submission & Hackathon Footer Strip */}
+      <footer
+        style={{
+          borderTop: '1px solid rgba(34, 209, 230, 0.15)',
+          background: 'rgba(5, 12, 16, 0.95)',
+          padding: '28px max(16px, 4vw)',
+          fontSize: '12.5px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1240px',
+            margin: 'auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
+          <div className="fl" style={{ gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, color: 'var(--cy)' }}>VERILOOP</span>
+            <span className="mu">·</span>
+            <span className="mono mu">{HACKATHON_TRACK}</span>
+          </div>
+
+          <div className="fl" style={{ gap: '16px', flexWrap: 'wrap' }}>
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mu hover:text-[var(--cy)] transition-colors"
+            >
+              GitHub Repo
+            </a>
+            <a
+              href={DEMO_VIDEO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mu hover:text-[var(--cy)] transition-colors"
+            >
+              Demo Video (3-min)
+            </a>
+            <a
+              href={README_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mu hover:text-[var(--cy)] transition-colors"
+            >
+              README & Architecture
+            </a>
+          </div>
+
+          <div className="mono mu" style={{ fontSize: '11px' }}>
+            Built with: Nebius Token Factory · NVIDIA Nemotron · Tavily
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
