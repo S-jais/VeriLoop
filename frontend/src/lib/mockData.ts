@@ -57,6 +57,26 @@ export interface DashboardData {
   };
 }
 
+export interface CausalNode {
+  id: string;
+  label: string;
+  type: string;
+  detail: string;
+}
+
+export interface CausalEdge {
+  from: string;
+  to: string;
+  label: string;
+}
+
+export interface CausalGraph {
+  nodes: CausalNode[];
+  edges: CausalEdge[];
+  confidence: number;
+  summary: string;
+}
+
 export interface MockFailure {
   id: string;
   scenario: string;
@@ -73,12 +93,7 @@ export interface MockFailure {
   model_used: string;
   inference_provider: string;
   trace: [string, string][];
-  causal_graph: {
-    nodes: { id: string; label: string; type: string; detail: string }[];
-    edges: { from: string; to: string; label: string }[];
-    confidence: number;
-    summary: string;
-  };
+  causal_graph: CausalGraph;
 }
 
 export interface MockExperimentCandidate {

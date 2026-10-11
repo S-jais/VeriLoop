@@ -126,26 +126,29 @@ function FailuresContent() {
 
   // Combine backend failures or seed failures
   const allFailures = backendFailures.length > 0
-    ? backendFailures.map((bf) => ({
-        id: bf.id,
-        scenario: (bf as any).scenario || bf.failure_type || bf.observed_behavior?.slice(0, 40) || 'Diagnosed failure',
-        type: bf.taxonomy_category || (bf as any).type || bf.category || 'POLICY_FAILURE',
-        sev: bf.severity || 'HIGH',
-        agent: `${CANONICAL_AGENT.name} v1.0`,
-        user: (bf as any).user_input || bf.test_input || 'Test scenario input',
-        obs: bf.observed_behavior || 'Observed failure',
-        mech: (bf as any).mechanism || bf.root_cause_hypothesis || 'Suspected mechanism',
-        root: bf.root_cause || bf.root_cause_hypothesis || 'Root cause hypothesis',
-        ev: (bf as any).ev || bf.expected_behavior || 'Grounded policy evidence',
-        trace: (bf as any).trace && Array.isArray((bf as any).trace)
-          ? (bf as any).trace
-          : bf.trace?.steps
-          ? (bf.trace.steps as any[]).map((s: any, idx: number) => [
-              `Step 0${idx + 1}: ${s.name || s.type || 'Action'}`,
-              JSON.stringify(s.data || s, null, 2),
-            ])
-          : SEED_FAILURES[0].trace,
-      }))
+    ? backendFailures.map((failureItem) => {
+        const bf = failureItem as any;
+        return {
+          id: bf.id,
+          scenario: bf.scenario || bf.failure_type || bf.observed_behavior?.slice(0, 40) || 'Diagnosed failure',
+          type: bf.taxonomy_category || bf.type || bf.category || 'POLICY_FAILURE',
+          sev: bf.severity || 'HIGH',
+          agent: `${CANONICAL_AGENT.name} v1.0`,
+          user: bf.user_input || bf.test_input || 'Test scenario input',
+          obs: bf.observed_behavior || 'Observed failure',
+          mech: bf.mechanism || bf.root_cause_hypothesis || 'Suspected mechanism',
+          root: bf.root_cause || bf.root_cause_hypothesis || 'Root cause hypothesis',
+          ev: bf.ev || bf.expected_behavior || 'Grounded policy evidence',
+          trace: Array.isArray(bf.trace)
+            ? bf.trace
+            : bf.trace?.steps
+            ? (bf.trace.steps as any[]).map((s: any, idx: number) => [
+                `Step 0${idx + 1}: ${s.name || s.type || 'Action'}`,
+                typeof s.data === 'string' ? s.data : JSON.stringify(s.data || s, null, 2),
+              ])
+            : SEED_FAILURES[0].trace,
+        };
+      })
     : SEED_FAILURES;
 
   // Filtered failure list
@@ -360,7 +363,7 @@ function FailuresContent() {
         </div>
 
         <div style={{ marginTop: '8px' }}>
-          {activeFailure.trace.map((step, idx) => (
+          {activeFailure.trace.map((step: any, idx: number) => (
             <details key={idx} open={idx === 0 || idx === activeFailure.trace.length - 1}>
               <summary style={{ padding: '9px 12px', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span className="mono mu" style={{ fontSize: '11.5px', minWidth: '24px' }}>

@@ -20,6 +20,9 @@ import {
   MockEvidenceItem,
   MockReportData,
   MockSettingsData,
+  CausalGraph,
+  CausalNode,
+  CausalEdge,
 } from './mockData';
 
 export class ApiError extends Error {
@@ -50,6 +53,9 @@ export type {
   MockEvidenceItem as EvidenceItem,
   MockReportData as ReportData,
   MockSettingsData as SettingsData,
+  CausalGraph,
+  CausalNode,
+  CausalEdge,
 };
 
 export interface EvalProgressEvent {
