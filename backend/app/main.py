@@ -343,5 +343,5 @@ async def global_exception_handler(request, exc):
     logger.error("Unhandled exception: %s", str(exc), exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"error": "Internal server error", "detail": "Check server logs for details"},
+        content={"error": "Internal server error", "detail": str(exc) if settings.demo_mode else "Check server logs for details"},
     )

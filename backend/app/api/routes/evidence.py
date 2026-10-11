@@ -29,11 +29,19 @@ async def trigger_research(req: ResearchRequest, db: AsyncSession = Depends(get_
         failure_id=req.failure_id,
     )
 
+    # Validate failure_id to prevent ForeignKey violations
+    actual_failure_id = None
+    if req.failure_id:
+        from app.db.models import Failure
+        fail_check = await db.execute(select(Failure).where(Failure.id == req.failure_id))
+        if fail_check.scalar_one_or_none():
+            actual_failure_id = req.failure_id
+
     saved = []
     for ev in results:
         item = EvidenceItem(
             id=str(uuid.uuid4()),
-            failure_id=req.failure_id,
+            failure_id=actual_failure_id,
             query=ev.query,
             source_url=ev.source_url,
             source_title=ev.source_title,
