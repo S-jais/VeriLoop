@@ -158,6 +158,7 @@ async def seed_demo_data(db: AsyncSession):
             "interventions": ["GUARDRAIL", "WORKFLOW"],
             "evidence_query": "ecommerce refund fraud prevention high-value damage threshold supervisor approval",
             "evidence_url": "https://fraud-prevention.retail-standards.org/guidelines/high-value-claims",
+            "evidence_title": "E-Commerce High-Value Damage Threshold & Supervisor Approval Standard",
             "evidence_summary": "Claims above $200 require mandatory physical/visual documentation and secondary managerial approval before automated payout.",
         },
         {
@@ -175,6 +176,7 @@ async def seed_demo_data(db: AsyncSession):
             "interventions": ["PROMPT", "GUARDRAIL"],
             "evidence_query": "LLM system prompt injection defense delimiters XML data framing",
             "evidence_url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/LLM01-prompt-injection",
+            "evidence_title": "OWASP LLM01: Prompt Injection Defense and Delimiter Specifications",
             "evidence_summary": "Strict input delimitation via XML tags with explicit delimiter instructions prevents unauthorized prompt escape.",
         },
         {
@@ -192,6 +194,7 @@ async def seed_demo_data(db: AsyncSession):
             "interventions": ["TOOL", "PROMPT"],
             "evidence_query": "OpenAI JSON schema tool function calling strict integer typing regex extraction",
             "evidence_url": "https://json-schema.org/understanding-json-schema/reference/numeric",
+            "evidence_title": "JSON Schema Specification & Integer Parameter Coercion Standard",
             "evidence_summary": "Type coercion schemas should explicitly specify integer types with pattern stripping for alphanumeric prefixes.",
         },
         {
@@ -209,6 +212,7 @@ async def seed_demo_data(db: AsyncSession):
             "interventions": ["MEMORY", "WORKFLOW"],
             "evidence_query": "conversational AI multi-turn state preservation token compression memory loss",
             "evidence_url": "https://arxiv.org/abs/2310.03025",
+            "evidence_title": "Selective Memory Retention Buffers in Multi-Turn Dialog Systems",
             "evidence_summary": "Selective key-value memory retention buffers prevent catastrophic state forgetting in multi-turn dialogues.",
         },
     ]
@@ -394,13 +398,13 @@ async def seed_demo_data(db: AsyncSession):
         evidence = EvidenceItem(
             id=f"ev-{f['id'].lower()}",
             failure_id=failure.id,
-            query=f["evidence_query"],
-            source_url=f["evidence_url"],
-            source_title=f["evidence_title"],
-            content_summary=f["evidence_summary"],
+            query=f.get("evidence_query", "Policy research"),
+            source_url=f.get("evidence_url", "https://docs.shopease.internal"),
+            source_title=f.get("evidence_title", "Verified Knowledge Base"),
+            content_summary=f.get("evidence_summary", "Verified external evidence grounding."),
             retrieved_at=seeded_created_at,
-            reason_for_research=f["root_cause"],
-            linked_test_id=f["tc_id"],
+            reason_for_research=f.get("root_cause", "Evidence grounding"),
+            linked_test_id=f.get("tc_id"),
         )
         db.add(evidence)
 
