@@ -21,7 +21,11 @@ export const SPONSOR_STRIP =
   'Nebius Token Factory (inference) · NVIDIA Nemotron (reasoning and judging) · Tavily (external evidence)';
 
 // API endpoint and data source resolution
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+export const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : 'https://veriloop.onrender.com'
+).trim().replace(/\/+$/, '');
 export const IS_LIVE = Boolean(API_BASE.length > 0);
 export const DATA_SOURCE: 'Sample run' | 'Live' = IS_LIVE ? 'Live' : 'Sample run';
 

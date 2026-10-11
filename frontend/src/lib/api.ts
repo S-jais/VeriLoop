@@ -33,15 +33,34 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, err.detail || err.error || res.statusText);
+  const primaryUrl = `${API_BASE}${path}`;
+  try {
+    const res = await fetch(primaryUrl, {
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      ...options,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new ApiError(res.status, err.detail || err.error || res.statusText);
+    }
+    return res.json();
+  } catch (err) {
+    // If direct cross-origin fetch failed (e.g. CORS restrictions on Render), retry via same-origin Next.js rewrite
+    if (API_BASE && !primaryUrl.startsWith('/') && typeof window !== 'undefined') {
+      try {
+        const proxyRes = await fetch(path, {
+          headers: { 'Content-Type': 'application/json', ...options?.headers },
+          ...options,
+        });
+        if (proxyRes.ok) {
+          return proxyRes.json();
+        }
+      } catch {
+        // Fall through to original error
+      }
+    }
+    throw err;
   }
-  return res.json();
 }
 
 // ─── Exported Types ──────────────────────────────────────────────────────────
@@ -206,7 +225,7 @@ export function startEvaluation(
         : versionId;
 
     try {
-      const res = await fetch(`${API_BASE}/api/evaluations`, {
+      let res: Response | null = await fetch(`${API_BASE}/api/evaluations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -214,10 +233,22 @@ export function startEvaluation(
           agent_version_id: targetVersionId,
         }),
         signal: controller.signal,
-      });
+      }).catch(() => null);
 
-      if (!res.ok || !res.body) {
-        console.warn(`Live evaluation endpoint returned status ${res.status}. Falling back to evaluation stream.`);
+      if ((!res || !res.ok) && API_BASE && !API_BASE.startsWith('/') && typeof window !== 'undefined') {
+        res = await fetch('/api/evaluations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agent_id: targetAgentId,
+            agent_version_id: targetVersionId,
+          }),
+          signal: controller.signal,
+        }).catch(() => null);
+      }
+
+      if (!res || !res.ok || !res.body) {
+        console.warn('Live evaluation endpoint unavailable. Falling back to evaluation stream.');
         fallbackCleanup = runMockEvaluationStream(onEvent, onComplete);
         return;
       }
