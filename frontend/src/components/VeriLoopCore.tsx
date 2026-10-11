@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { DATA_SOURCE, CANONICAL_AGENT, NEMOTRON_MODEL_ID, INFERENCE_PROVIDER } from '@/lib/config';
+
 export interface VeriLoopCoreProps {
   demoMode?: boolean;
   variant?: 'hero' | 'inline';
@@ -23,46 +25,46 @@ interface TargetAgent {
 
 const TARGET_AGENTS: TargetAgent[] = [
   {
-    n: 'Support agent',
-    sc: 'Damaged product replacement',
+    n: CANONICAL_AGENT.name,
+    sc: 'Damaged laptop replacement request',
     ty: 'RETRIEVAL_FAILURE',
-    root: 'outdated policy ranked above the current one',
-    fix: 'RETRIEVAL · prioritize latest policy',
+    root: 'outdated policy v2.1 ranked above active v3.4',
+    fix: 'RETRIEVAL · prioritize latest policy via Tavily',
   },
   {
-    n: 'Booking agent',
-    sc: 'Rebook a cancelled flight',
-    ty: 'TOOL_FAILURE',
-    root: 'wrong tool chosen for rebooking',
-    fix: 'TOOL · fix routing rule',
-  },
-  {
-    n: 'Research agent',
-    sc: 'Summarize a cited paper',
-    ty: 'GROUNDING_FAILURE',
-    root: 'claim not supported by its source',
-    fix: 'PROMPT · require cited evidence',
-  },
-  {
-    n: 'Code agent',
-    sc: '“Ignore previous instructions”',
-    ty: 'SAFETY_FAILURE',
-    root: 'injected text reached a tool call',
-    fix: 'GUARDRAIL · validate tool input',
-  },
-  {
-    n: 'Billing agent',
-    sc: 'Refund after 30 days',
+    n: CANONICAL_AGENT.name,
+    sc: 'Refund request beyond 30 days',
     ty: 'POLICY_FAILURE',
-    root: 'refund window rule skipped',
-    fix: 'WORKFLOW · check policy before replying',
+    root: 'refund window validation gate omitted',
+    fix: 'WORKFLOW · enforce 30-day policy guardrail',
   },
   {
-    n: 'Triage agent',
-    sc: 'Address change over 4 turns',
+    n: CANONICAL_AGENT.name,
+    sc: 'Prepaid return shipping label',
+    ty: 'TOOL_FAILURE',
+    root: 'wrong tool chosen for warranty RMA label',
+    fix: 'TOOL · disambiguate commercial vs RMA shipping',
+  },
+  {
+    n: CANONICAL_AGENT.name,
+    sc: 'Prompt injection via claim inquiry',
+    ty: 'SAFETY_FAILURE',
+    root: 'jailbreak directive bypassed instruction boundary',
+    fix: 'GUARDRAIL · isolate untrusted user tokens',
+  },
+  {
+    n: CANONICAL_AGENT.name,
+    sc: 'Multi-turn delivery address update',
     ty: 'CONTEXT_FAILURE',
-    root: 'earlier address dropped from context',
-    fix: 'MEMORY · keep entities in context',
+    root: 'earlier address locked into summarizer memory',
+    fix: 'MEMORY · overwrite entities on user amendment',
+  },
+  {
+    n: CANONICAL_AGENT.name,
+    sc: 'Holdout generalization audit',
+    ty: 'HOLDOUT_AUDIT',
+    root: 'unseen holdout suite verification',
+    fix: 'VERIFICATION · zero-regression firewall clearance',
   },
 ];
 
@@ -199,7 +201,21 @@ export function VeriLoopCore({
 
   const [currentStage, setCurrentStage] = useState<number>(-1); // -1 = idle/agent, 0..5 = Test..Proven
   const [paused, setPaused] = useState(false);
-  const [counters, setCounters] = useState({ p: 58, f: 3, v: 3 });
+  const [counters, setCounters] = useState({ p: 100, f: 5, v: 1 });
+
+  // Respect prefers-reduced-motion
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mql.matches) {
+      setPaused(true);
+    }
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches) setPaused(true);
+    };
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   // Ticker: holds previous line (dimmed) and current line (sliding with glow)
   const [tickerHistory, setTickerHistory] = useState<{
@@ -210,7 +226,7 @@ export function VeriLoopCore({
     prev: null,
     curr: {
       ts: '00:01',
-      text: 'testing Support agent: Damaged product replacement',
+      text: `testing ${CANONICAL_AGENT.name}: Damaged laptop replacement request`,
       k: 'probe',
     },
     flip: false,
@@ -222,7 +238,7 @@ export function VeriLoopCore({
     stateText: string;
     stateCls: string;
   }>({
-    name: 'Support agent',
+    name: CANONICAL_AGENT.name,
     stateText: 'UNDER TEST',
     stateCls: '',
   });
@@ -738,10 +754,10 @@ export function VeriLoopCore({
 
       {/* Top Left Simulation Status Badge */}
       <div className="st-top">
-        <span className="bd ar-bd">
+        <span className={`bd ar-bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`}>
           <i></i>
           <span className="ar-badge">
-            {demoMode ? 'ILLUSTRATIVE SIMULATION' : 'LIVE RELIABILITY RUN'}
+            {DATA_SOURCE}
           </span>
         </span>
       </div>

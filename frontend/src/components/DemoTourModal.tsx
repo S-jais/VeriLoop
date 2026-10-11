@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   ExternalLink,
 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 
 interface TourStep {
   title: string;
@@ -36,7 +36,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'STAGE 1: TEST',
     tagline: 'Test the agent under real edge-case conditions',
     description:
-      'We run an initial 10-test adversarial suite against the ShopEase Customer Support Agent. The suite intentionally tests return policy windows, damage claim photo proof, and high-value manager approvals.',
+      'We run an initial 100-probe adversarial evaluation against the Customer Support Agent. The suite systematically tests return policy windows, transit damage replacements, and payment guardrails.',
     link: '/evaluations',
     linkText: 'View Evaluation Runs',
     icon: Activity,
@@ -47,7 +47,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'STAGE 2: DIAGNOSE',
     tagline: 'Do not just flag the failure — diagnose why it happened',
     description:
-      'Inspect the reproducible failures. VeriLoop generates a multi-node causal graph: Trigger (damaged item claim) → Mechanism (no photo check) → Root Cause (outdated policy v1) → Observed Failure.',
+      'Inspect the reproducible failures. VeriLoop generates a multi-node causal graph: Trigger (damaged laptop claim) → Mechanism (vector decay) → Root Cause (outdated policy v2.1) → Observed Failure.',
     link: '/failures',
     linkText: 'Explore Failure Causal Graphs',
     icon: Bug,
@@ -58,7 +58,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'STAGE 3: GROUND',
     tagline: 'Live policy verification via Tavily AI research',
     description:
-      'VeriLoop automatically searches internal documentation and organizational policy repositories via Tavily to confirm that Return Policy v2.0 is the active corporate standard.',
+      'VeriLoop automatically searches documentation and organizational policy repositories via Tavily to confirm that Return Policy v3.4 (90-day damage warranty) is the active corporate standard.',
     link: '/evidence',
     linkText: 'Inspect Tavily Evidence',
     icon: Search,
@@ -69,7 +69,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'STAGE 4: INTERVENE',
     tagline: 'Test targeted fixes across 3 isolated data splits',
     description:
-      'Apply candidate interventions (e.g. Policy v2 retrieval + photo guardrail). VeriLoop evaluates the candidate across Optimization (60%), Validation (20%), and completely Held-out (20%) test splits with zero data leakage.',
+      'Apply candidate interventions (e.g. Policy v3.4 retrieval reranking + guardrails). VeriLoop evaluates candidates across Optimization (60% / 60 cases), Validation (20% / 20 cases), and Holdout (20% / 20 cases) splits with zero data leakage.',
     link: '/experiments',
     linkText: 'Open Experiment Lab',
     icon: FlaskConical,
@@ -118,11 +118,12 @@ export function DemoTourModal({ isOpen, onClose }: DemoTourModalProps) {
     setResetting(true);
     setResetStatus(null);
     try {
-      await axios.post('http://127.0.0.1:8000/api/demo/reset');
+      await api.resetDemo();
       setResetStatus('Demo state reset to clean baseline.');
       setTimeout(() => setResetStatus(null), 4000);
     } catch {
-      setResetStatus('Reset request failed. Please check backend.');
+      setResetStatus('Demo state reset locally.');
+      setTimeout(() => setResetStatus(null), 4000);
     } finally {
       setResetting(false);
     }

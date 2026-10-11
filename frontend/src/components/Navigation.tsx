@@ -17,6 +17,8 @@ import {
   X,
 } from 'lucide-react';
 
+import { DATA_SOURCE } from '@/lib/config';
+
 interface NavGroup {
   label: string;
   items: {
@@ -198,9 +200,9 @@ export function Navigation() {
             </Link>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <span className="bd">
+            <span className={`bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`}>
               <i></i>
-              Environment: local
+              {DATA_SOURCE}
             </span>
           </div>
         </div>

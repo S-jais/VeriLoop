@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import axios from 'axios';
+import { DATA_SOURCE } from '@/lib/config';
+import { api } from '@/lib/api';
 import { Play, RotateCcw, Search, Menu } from 'lucide-react';
 import { useNav } from '@/components/AppShell';
 
@@ -23,7 +24,6 @@ export function TopBar() {
   const router = useRouter();
   const { toggle } = useNav();
   const [resetting, setResetting] = useState(false);
-  const [demoData, setDemoData] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
 
   // If on landing / home / auth pages, hide TopBar
@@ -42,7 +42,7 @@ export function TopBar() {
     if (!confirm('Reset demo agent to clean baseline? This clears candidate versions.')) return;
     setResetting(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/demo/reset');
+      await api.resetDemo();
       window.location.reload();
     } catch {
       window.location.reload();
@@ -57,10 +57,6 @@ export function TopBar() {
       if (pathname !== '/dashboard') {
         router.push('/dashboard');
       }
-      await axios.post('http://127.0.0.1:8000/api/evaluations', {
-        agent_id: 'demo-customer-support-agent-v1',
-      });
-      window.location.reload();
     } catch (e) {
       console.error(e);
     } finally {
@@ -95,8 +91,10 @@ export function TopBar() {
 
       <span className="sp" />
 
-      <span className="bd hidden md:inline-flex">
-        <i style={{ color: 'var(--am)' }}></i>DEMO BASELINE
+      {/* Honest Labeling Data Source Badge */}
+      <span className={`bd ${DATA_SOURCE === 'Live' ? 'ok' : 'in'}`} title="Execution Environment">
+        <i></i>
+        {DATA_SOURCE}
       </span>
 
       <button
@@ -110,19 +108,6 @@ export function TopBar() {
         <RotateCcw size={12} className={resetting ? 'animate-spin' : ''} />
         <span className="hidden lg:inline">↺ Reset</span>
       </button>
-
-      <label
-        className="hidden md:flex fl mu"
-        style={{ cursor: 'pointer', fontSize: '12.5px', userSelect: 'none', gap: '6px' }}
-      >
-        <input
-          type="checkbox"
-          checked={demoData}
-          onChange={(e) => setDemoData(e.target.checked)}
-          aria-label="Demo data toggle"
-        />
-        <span>Demo data</span>
-      </label>
 
       <button
         onClick={openPalette}

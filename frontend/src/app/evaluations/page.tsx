@@ -91,13 +91,13 @@ export default function EvaluationsPage() {
         <div style={{ marginTop: '14px' }}>
           <div className="split">
             <div style={{ width: '60%', background: 'var(--bl)' }}>
-              OPTIMIZATION 60%
+              OPTIMIZATION 60% (60 cases)
             </div>
             <div style={{ width: '20%', background: 'var(--am)' }}>
-              VALIDATION 20%
+              VALIDATION 20% (20 cases)
             </div>
             <div style={{ width: '20%', background: 'var(--gr)' }}>
-              HOLDOUT 20%
+              HOLDOUT 20% (20 cases)
             </div>
           </div>
           <p className="mu" style={{ fontSize: '12.5px', marginTop: '10px' }}>

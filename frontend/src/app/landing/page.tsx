@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Play } from 'lucide-react';
 import { VeriLoopCore } from '@/components/VeriLoopCore';
+import { NEMOTRON_MODEL_ID, SPONSOR_STRIP } from '@/lib/config';
 
 const FAILURE_MODES = [
   'Outdated knowledge',
@@ -133,6 +134,20 @@ export default function LandingPage() {
         </Link>
       </nav>
 
+      {/* Built With Sponsor Strip (Text only, no logos) */}
+      <div
+        className="w-full text-center py-2 px-4 mono mu"
+        style={{
+          fontSize: '11.5px',
+          background: 'rgba(5, 12, 16, 0.9)',
+          borderBottom: '1px solid rgba(34, 209, 230, 0.15)',
+          letterSpacing: '0.02em',
+        }}
+      >
+        <span style={{ color: 'var(--cy)', fontWeight: 600 }}>Built with: </span>
+        <span>{SPONSOR_STRIP}</span>
+      </div>
+
       {/* Full Screen Plasma Vortex Hero Stage */}
       <VeriLoopCore
         demoMode={true}
@@ -232,12 +247,12 @@ export default function LandingPage() {
         <div className="card g g2" style={{ gap: '24px' }}>
           <div>
             <p className="mu" style={{ fontSize: '14px', lineHeight: 1.6 }}>
-              Nebius Token Factory serves the inference layer. An NVIDIA model handles reasoning and evaluation. Tavily supplies external evidence when a failure needs it.
+              Nebius Token Factory serves the high-throughput inference layer. NVIDIA Nemotron ({NEMOTRON_MODEL_ID}) handles test generation, causal failure reasoning and holdout judging. Tavily supplies external grounding evidence when a failure diagnosis requires current policy lookup.
             </p>
             <div className="fl" style={{ marginTop: '14px', flexWrap: 'wrap' }}>
-              <span className="bd in"><i></i>NEBIUS TOKEN FACTORY</span>
-              <span className="bd in"><i></i>NVIDIA MODEL</span>
-              <span className="bd in"><i></i>TAVILY</span>
+              <span className="bd in"><i></i>NEBIUS TOKEN FACTORY (INFERENCE)</span>
+              <span className="bd in"><i></i>NVIDIA NEMOTRON (REASONING & JUDGING)</span>
+              <span className="bd in"><i></i>TAVILY (EXTERNAL EVIDENCE)</span>
             </div>
           </div>
           <div className="fl" style={{ alignContent: 'flex-start', flexWrap: 'wrap' }}>

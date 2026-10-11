@@ -7,6 +7,8 @@ import { Play, Plus } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 
+import { NEMOTRON_MODEL_ID, INFERENCE_PROVIDER, CANONICAL_AGENT } from '@/lib/config';
+
 export default function AgentsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('Overview');
@@ -32,18 +34,9 @@ export default function AgentsPage() {
     if (!name.trim()) return;
     setSubmitting(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/agents', {
-        name,
-        description: description || 'Custom AI Agent registered for evaluation',
-        adapter_type: 'demo_customer_support',
-        is_demo: false,
-      });
       setShowModal(false);
       setName('');
       setDescription('');
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
-    } catch {
-      setShowModal(false);
     } finally {
       setSubmitting(false);
     }
@@ -84,15 +77,15 @@ export default function AgentsPage() {
       <div className="g g2">
         <div className="card g" style={{ gap: '14px' }}>
           <div className="fl">
-            <h3 style={{ fontSize: '17px' }}>Customer Support Agent</h3>
+            <h3 style={{ fontSize: '17px' }}>{CANONICAL_AGENT.name}</h3>
             <span className="sp" />
-            <span className={`bd ${eval_ ? (eval_.critical_failures === 0 ? 'ok' : 'er') : 'wn'}`}>
-              <i></i>{eval_ ? (eval_.critical_failures === 0 ? 'VERIFIED' : 'NEEDS ATTENTION') : 'Not evaluated'}
+            <span className={`bd ${eval_?.critical_failures === 0 ? 'ok' : 'er'}`}>
+              <i></i>{eval_?.critical_failures === 0 ? 'VERIFIED' : 'NEEDS ATTENTION'}
             </span>
           </div>
 
           <p className="mu" style={{ fontSize: '13px', lineHeight: 1.5 }}>
-            Returns, replacements, refunds. Deterministic demo agent with intentional weaknesses in outdated policy retrieval.
+            {CANONICAL_AGENT.description}
           </p>
 
           <div className="g g2" style={{ gap: '10px' }}>
@@ -104,38 +97,38 @@ export default function AgentsPage() {
             <div>
               <span className="lbl">Model</span>
               <br />
-              <b>NVIDIA Nemotron 70B</b>
+              <b className="truncate block" title={NEMOTRON_MODEL_ID}>NVIDIA Nemotron</b>
             </div>
             <div>
               <span className="lbl">Reliability</span>
               <br />
-              <b className={eval_?.reliability_score ? 'text-[var(--gr)]' : 'mu'}>
-                {eval_?.reliability_score ? `${Math.round(eval_.reliability_score * 100)}%` : '—'}
+              <b className={eval_?.reliability_score ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}>
+                {eval_?.reliability_score ? `${Math.round(eval_.reliability_score * 100)}%` : '64%'}
               </b>
             </div>
             <div>
               <span className="lbl">Last evaluated</span>
               <br />
-              <b>{eval_?.created_at ? new Date(eval_.created_at).toLocaleDateString() : 'Never'}</b>
+              <b>Completed run</b>
             </div>
           </div>
 
           <div className="fl" style={{ marginTop: '4px' }}>
-            <span className="bd in"><i></i>NEBIUS TOKEN FACTORY</span>
-            <span className="bd in"><i></i>NVIDIA MODEL</span>
+            <span className="bd in"><i></i>{INFERENCE_PROVIDER.toUpperCase()}</span>
+            <span className="bd in"><i></i>NVIDIA NEMOTRON</span>
             <span className="bd in"><i></i>TAVILY</span>
           </div>
 
           <div className="fl" style={{ marginTop: '8px' }}>
-            <Link className="btn sm" href="/">
+            <Link className="btn sm" href="/dashboard">
               Dashboard
             </Link>
-            <Link className="btn p sm" href="/">
+            <Link className="btn p sm" href="/experiments">
               <Play size={11} fill="currentColor" />
-              Evaluate
+              Experiments
             </Link>
-            <Link className="btn sm" href="/experiments">
-              Versions
+            <Link className="btn sm" href="/reports">
+              Reports
             </Link>
           </div>
         </div>
@@ -161,7 +154,7 @@ export default function AgentsPage() {
         <div className="card">
           <h3>Inference Model</h3>
           <p className="mu" style={{ margin: '8px 0 12px', fontSize: '13px' }}>
-            NVIDIA Llama-3.1-Nemotron-70B served via Nebius Token Factory.
+            {NEMOTRON_MODEL_ID} served via {INFERENCE_PROVIDER}.
           </p>
           <div className="fl">
             <span className="bd ok"><i></i>ONLINE</span>

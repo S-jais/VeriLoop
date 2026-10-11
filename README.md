@@ -214,6 +214,63 @@ npm run build
 
 ---
 
+## 🖥️ Frontend Architecture & Quickstart
+
+### Technology Stack
+- **Framework**: Next.js 16 (App Router) with React 19
+- **Language**: TypeScript (strict typing with single-source API contracts)
+- **Data Layer**: Universal typed API client (`lib/api.ts`) with mock/live adapter switching
+- **State Management**: TanStack React Query (v5)
+- **Styling**: Cybernetic dark teal design system with CSS custom properties
+- **Graphics**: Procedural WebGL fragment shader with mathematical fBm plasma noise (respects `prefers-reduced-motion`)
+- **Icons**: Lucide React
+
+---
+
+### How to Run with Mock Data (Hackathon Judges Mode)
+
+The frontend is completely self-contained out of the box. No local backend or API keys are required to explore all features, causal graphs, candidate experiments, and reports:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser.
+The badge will display **Sample run**, indicating that the typed mock adapter (`lib/mockData.ts`) is active with the canonical evaluation dataset.
+
+---
+
+### How to Point at a Real Backend
+
+To connect the frontend to a live FastAPI backend:
+
+1. Create or edit `frontend/.env.local`:
+   ```env
+   # Point to your running FastAPI backend
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+
+   # Optional: customize exact NVIDIA Nemotron model ID
+   NEXT_PUBLIC_NEMOTRON_MODEL_ID=nvidia/llama-3.1-nemotron-70b-instruct
+   ```
+
+2. Restart the frontend development server:
+   ```bash
+   npm run dev
+   ```
+
+3. The badge in the UI will automatically flip from **Sample run** to **Live**.
+
+---
+
+## 🤖 AI Assistance Disclosure
+
+UI built with AI assistance (Claude, Antigravity).
+
+---
+
 ## 📜 License
 
-MIT License. Built for the Hackathon with Nebius Token Factory, NVIDIA Open-Source Models, and Tavily AI Research.
+MIT License. Built for the Nebius x NVIDIA Global AI Hackathon with Nebius Token Factory, NVIDIA Nemotron, and Tavily AI Research.
+
