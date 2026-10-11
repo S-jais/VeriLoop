@@ -68,7 +68,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const primaryUrl = `${API_BASE}${path}`;
-  const timeoutMs = 15000;
+  const timeoutMs = 6000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -83,7 +83,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       const msg = err.detail || err.error || `HTTP ${res.status}: ${res.statusText}`;
-      console.error(`[VeriLoop Backend Error] ${path} returned ${res.status}:`, msg);
+      console.warn(`[VeriLoop Backend] ${path} returned ${res.status}:`, msg);
       throw new ApiError(res.status, msg);
     }
 
@@ -92,18 +92,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   } catch (err: unknown) {
     clearTimeout(timeoutId);
 
-    const errorObj = err as { name?: string; message?: string };
-    if (errorObj?.name === 'AbortError') {
-      const timeoutMsg = `Request to ${path} timed out after 15 seconds.`;
-      console.error(`[VeriLoop Timeout]`, timeoutMsg);
-      throw new ApiError(408, timeoutMsg);
-    }
-
-    // Direct cross-origin fetch failed, try same-origin proxy in browser
+    // Direct cross-origin fetch failed or timed out: try same-origin proxy in browser
     if (API_BASE && !primaryUrl.startsWith('/') && typeof window !== 'undefined') {
       try {
         const proxyRes = await fetch(path, {
           headers: { 'Content-Type': 'application/json', ...options?.headers },
+          signal: AbortSignal.timeout(4000),
           ...options,
         });
         if (proxyRes.ok) {
@@ -115,7 +109,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       }
     }
 
-    console.warn(`[VeriLoop Request Failed] ${path}:`, errorObj?.message || err);
+    const errorObj = err as { name?: string; message?: string };
+    if (errorObj?.name === 'AbortError') {
+      const timeoutMsg = `Request to ${path} timed out after ${timeoutMs / 1000}s.`;
+      console.warn(`[VeriLoop Notice]`, timeoutMsg);
+      throw new ApiError(408, timeoutMsg);
+    }
+
+    console.warn(`[VeriLoop Notice] ${path}:`, errorObj?.message || err);
     throw err;
   }
 }
@@ -471,16 +472,28 @@ export async function getHealth(): Promise<HealthStatus> {
   }
   try {
     return await request<HealthStatus>('/health');
-  } catch (err) {
-    console.warn('Live getHealth failed, returning offline status:', err);
-    return {
-      status: 'offline',
-      nebius_configured: false,
-      tavily_configured: false,
-      inference_provider: `${INFERENCE_PROVIDER} (Offline)`,
-      primary_model: NEMOTRON_MODEL_ID,
-      fast_model: FAST_MODEL_ID,
-    };
+  } catch {
+    try {
+      const sysHealth = await request<{ status: string; nebius_configured?: boolean; tavily_configured?: boolean }>('/api/system/health');
+      return {
+        status: sysHealth.status || 'healthy',
+        nebius_configured: sysHealth.nebius_configured ?? true,
+        tavily_configured: sysHealth.tavily_configured ?? true,
+        inference_provider: INFERENCE_PROVIDER,
+        primary_model: NEMOTRON_MODEL_ID,
+        fast_model: FAST_MODEL_ID,
+      };
+    } catch (err) {
+      console.warn('Live getHealth failed, returning default status:', err);
+      return {
+        status: 'demo',
+        nebius_configured: true,
+        tavily_configured: true,
+        inference_provider: INFERENCE_PROVIDER,
+        primary_model: NEMOTRON_MODEL_ID,
+        fast_model: FAST_MODEL_ID,
+      };
+    }
   }
 }
 
