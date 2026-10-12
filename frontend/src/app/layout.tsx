@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   description:
     'Find why AI agents fail. Test targeted fixes. Prove they generalize. VeriLoop is an autonomous reliability engineer for AI agents.',
   keywords: ['AI agent testing', 'reliability engineering', 'agent evaluation', 'Nebius', 'NVIDIA'],
+  icons: {
+    icon: '/veriloop-mark.svg',
+    shortcut: '/veriloop-mark.svg',
+    apple: '/veriloop-mark.svg',
+  },
 };
 
 import { AmbientEnergyBackdrop } from '@/components/AmbientEnergyBackdrop';
@@ -34,7 +39,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>

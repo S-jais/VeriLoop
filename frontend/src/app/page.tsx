@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Play } from 'lucide-react';
 import { VeriLoopCore } from '@/components/VeriLoopCore';
+import { VeriLoopLogo } from '@/components/Logo';
 import { NEMOTRON_MODEL_ID, SPONSOR_STRIP } from '@/lib/config';
 
 export const DEMO_VIDEO_URL = 'https://youtu.be/placeholder-veriloop-demo';
@@ -89,55 +90,19 @@ export default function HomePage() {
           width: '100%',
         }}
       >
-        {/* VeriLoop Logo and Text - Clicking opens Home Page */}
+        {/* VeriLoop Logo - Clicking opens Home Page */}
         <Link
           href="/"
           style={{
-            display: 'flex',
-            gap: '10px',
+            display: 'inline-flex',
             alignItems: 'center',
-            fontWeight: 650,
-            fontSize: '15px',
             cursor: 'pointer',
             flexShrink: 0,
+            textDecoration: 'none',
           }}
           title="VeriLoop Home"
         >
-          <span
-            style={{
-              display: 'grid',
-              placeItems: 'center',
-              width: '36px',
-              height: '36px',
-              background: 'var(--cy)',
-              borderRadius: '3px',
-              flex: 'none',
-            }}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 32 32"
-              aria-hidden="true"
-            >
-              <path
-                d="M16 4a12 12 0 1 0 11 7.4"
-                fill="none"
-                stroke="#04161A"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M10.5 16.5l4 4 8-9"
-                fill="none"
-                stroke="#04161A"
-                strokeWidth="3.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span style={{ letterSpacing: '.04em' }}>VERILOOP</span>
+          <VeriLoopLogo height={34} />
         </Link>
 
         <span className="sp" />
@@ -163,12 +128,20 @@ export default function HomePage() {
         </Link>
       </nav>
 
-      {/* Built With Sponsor Strip (Text only, no logos) */}
+      {/* Full Screen Plasma Vortex Hero Stage (Step rail stays 100% visible on screen above fold) */}
+      <VeriLoopCore
+        demoMode={true}
+        variant="hero"
+        onRunClick={handleRunEvaluation}
+      />
+
+      {/* Built With Sponsor Strip (Relocated below hero stage so step rail is visible above fold) */}
       <div
-        className="w-full text-center py-2 px-4 mono mu"
+        className="w-full text-center py-2.5 px-4 mono mu"
         style={{
-          fontSize: '11.5px',
-          background: 'rgba(5, 12, 16, 0.9)',
+          fontSize: '12px',
+          background: 'rgba(5, 12, 16, 0.95)',
+          borderTop: '1px solid rgba(34, 209, 230, 0.15)',
           borderBottom: '1px solid rgba(34, 209, 230, 0.15)',
           letterSpacing: '0.02em',
         }}
@@ -176,13 +149,6 @@ export default function HomePage() {
         <span style={{ color: 'var(--cy)', fontWeight: 600 }}>Built with: </span>
         <span>{SPONSOR_STRIP}</span>
       </div>
-
-      {/* Full Screen Plasma Vortex Hero Stage */}
-      <VeriLoopCore
-        demoMode={true}
-        variant="hero"
-        onRunClick={handleRunEvaluation}
-      />
 
       {/* Section: Why AI agents fail */}
       <section
@@ -341,8 +307,8 @@ export default function HomePage() {
             gap: '16px',
           }}
         >
-          <div className="fl" style={{ gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, color: 'var(--cy)' }}>VERILOOP</span>
+          <div className="fl" style={{ gap: '12px', alignItems: 'center' }}>
+            <VeriLoopLogo height={24} />
             <span className="mu">·</span>
             <span className="mono mu">{HACKATHON_TRACK}</span>
           </div>

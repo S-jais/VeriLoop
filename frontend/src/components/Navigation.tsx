@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDataSource } from '@/lib/useDataSource';
+import { VeriLoopLogo } from '@/components/Logo';
 
 interface NavGroup {
   label: string;
@@ -110,41 +111,9 @@ export function Navigation() {
             onClick={close}
             className="brand"
             title="Open VeriLoop Home Page"
-            style={{ color: 'var(--tx)', cursor: 'pointer', padding: 0 }}
+            style={{ color: 'var(--tx)', cursor: 'pointer', padding: '2px 0' }}
           >
-            <span
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                width: '38px',
-                height: '38px',
-                background: 'var(--cy)',
-                borderRadius: '3px',
-                flex: 'none',
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
-                <path
-                  d="M16 4a12 12 0 1 0 11 7.4"
-                  fill="none"
-                  stroke="#04161A"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M10.5 16.5l4 4 8-9"
-                  fill="none"
-                  stroke="#04161A"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div>
-              <span>VERILOOP</span>
-              <small>RELIABILITY ENGINEERING</small>
-            </div>
+            <VeriLoopLogo height={34} />
           </Link>
 
           <button

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Lock, Mail, Sparkles } from 'lucide-react';
 import { DATA_SOURCE } from '@/lib/config';
+import { VeriLoopLogo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,43 +72,11 @@ export default function LoginPage() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '10px',
               textDecoration: 'none',
-              color: 'var(--tx)',
             }}
+            title="VeriLoop Home"
           >
-            <span
-              style={{
-                display: 'grid',
-                placeItems: 'center',
-                width: '40px',
-                height: '40px',
-                background: 'var(--cy)',
-                borderRadius: '4px',
-                boxShadow: '0 0 16px rgba(34, 209, 230, 0.4)',
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
-                <path
-                  d="M16 4a12 12 0 1 0 11 7.4"
-                  fill="none"
-                  stroke="#04161A"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M10.5 16.5l4 4 8-9"
-                  fill="none"
-                  stroke="#04161A"
-                  strokeWidth="3.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '0.04em' }}>
-              VERILOOP
-            </span>
+            <VeriLoopLogo height={42} />
           </Link>
           <h2 style={{ fontSize: '20px', marginTop: '16px', fontWeight: 600 }}>
             Sign In to Console
