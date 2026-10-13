@@ -88,7 +88,7 @@ export default function EvaluationsPage() {
         <div>
           <div className="fl" style={{ gap: '8px', alignItems: 'center' }}>
             <h2>Evaluations</h2>
-            <span className={`bd ${badgeClass}`} title={sublabel}>
+            <span className={`bd ${badgeClass}`} title={sublabel} suppressHydrationWarning>
               <i></i>
               {dataSourceLabel}
             </span>

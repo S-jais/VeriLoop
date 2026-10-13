@@ -171,7 +171,7 @@ export function Navigation() {
             </Link>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <span className={`bd ${badgeClass}`} title={sublabel}>
+            <span className={`bd ${badgeClass}`} title={sublabel} suppressHydrationWarning>
               <i></i>
               {dataSourceLabel}
             </span>

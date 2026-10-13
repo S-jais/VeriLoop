@@ -93,7 +93,7 @@ export function TopBar() {
       <span className="sp" />
 
       {/* Honest Labeling Data Source Badge */}
-      <span className={`bd ${badgeClass}`} title={sublabel}>
+      <span className={`bd ${badgeClass}`} title={sublabel} suppressHydrationWarning>
         <i></i>
         {dataSourceLabel}
       </span>

@@ -89,7 +89,7 @@ export default function DashboardPage() {
             {dashboard?.agent.name || 'Customer Support Agent'} · {dashboard?.agent.version || 'v1.0 (baseline)'}
           </span>
           <span className="sp" />
-          <span className={`bd ${badgeClass}`} title={sublabel}>
+          <span className={`bd ${badgeClass}`} title={sublabel} suppressHydrationWarning>
             <i></i>
             {dataSourceLabel}
           </span>

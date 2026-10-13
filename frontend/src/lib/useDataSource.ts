@@ -11,15 +11,11 @@ export interface DataSourceState {
 }
 
 export function useDataSource(): DataSourceState {
-  const [isLive, setIsLive] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return isSessionLive();
-    }
-    return false;
-  });
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [isLive, setIsLive] = useState<boolean>(false);
 
   useEffect(() => {
-    // Sync on mount
+    setMounted(true);
     setIsLive(isSessionLive());
 
     const unsubscribe = subscribeSessionLive((live) => {
@@ -41,12 +37,14 @@ export function useDataSource(): DataSourceState {
     };
   }, []);
 
+  const effectiveLive = mounted ? isLive : false;
+
   return {
-    isLive,
-    label: isLive ? 'Live' : 'Sample run',
-    sublabel: isLive
+    isLive: effectiveLive,
+    label: effectiveLive ? 'Live' : 'Sample run',
+    sublabel: effectiveLive
       ? 'Connected to live backend session'
       : 'Cached baseline run (2026-10-11 16:00 UTC)',
-    badgeClass: isLive ? 'ok' : 'in',
+    badgeClass: effectiveLive ? 'ok' : 'in',
   };
 }
