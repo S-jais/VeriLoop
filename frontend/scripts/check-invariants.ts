@@ -11,14 +11,14 @@ import {
   selectSplits,
   selectRecentFailures,
   selectExperimentTable,
-} from '../src/lib/selectors.ts';
+} from '../src/lib/selectors';
 
 console.log('--- VeriLoop Mathematical Invariants Verification ---');
 
 const run = CANONICAL_EVALUATION_RUN;
 let failures = 0;
 
-function assert(condition, message) {
+function assert(condition: any, message: string) {
   if (!condition) {
     console.error(`❌ INVARIANT VIOLATION: ${message}`);
     failures++;

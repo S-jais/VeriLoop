@@ -383,46 +383,50 @@ function FailuresContent() {
             </div>
 
             <div className="space-y-2">
-              {activeFailure.trace.map(([stepName, content], idx) => (
-                <details
-                  key={idx}
-                  className="card"
-                  style={{
-                    background: 'var(--s1)',
-                    borderColor: 'var(--ln)',
-                    padding: '10px 14px',
-                  }}
-                  open={idx === 0 || idx === activeFailure.trace.length - 1}
-                >
-                  <summary
-                    className="fl cursor-pointer font-semibold"
-                    style={{ justifyContent: 'space-between', fontSize: '13px' }}
+              {activeFailure.trace.map((stepItem: any, idx: number) => {
+                const stepName: string = Array.isArray(stepItem) ? String(stepItem[0]) : `Step 0${idx + 1}`;
+                const content: string = Array.isArray(stepItem) ? String(stepItem[1]) : JSON.stringify(stepItem, null, 2);
+                return (
+                  <details
+                    key={idx}
+                    className="card"
+                    style={{
+                      background: 'var(--s1)',
+                      borderColor: 'var(--ln)',
+                      padding: '10px 14px',
+                    }}
+                    open={idx === 0 || idx === activeFailure.trace.length - 1}
                   >
-                    <span style={{ color: idx === activeFailure.trace.length - 1 ? 'var(--rd)' : 'var(--tx)' }}>
-                      {stepName}
-                    </span>
-                    <span className="mono mu" style={{ fontSize: '11px' }}>
-                      STEP {idx + 1}
-                    </span>
-                  </summary>
-                  <div style={{ marginTop: '10px' }}>
-                    <pre
-                      style={{
-                        padding: '10px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        lineHeight: 1.5,
-                        overflowX: 'auto',
-                        fontFamily: 'monospace',
-                        color: idx === activeFailure.trace.length - 1 ? 'var(--rd)' : 'var(--tx)',
-                      }}
+                    <summary
+                      className="fl cursor-pointer font-semibold"
+                      style={{ justifyContent: 'space-between', fontSize: '13px' }}
                     >
-                      {content}
-                    </pre>
-                  </div>
-                </details>
-              ))}
+                      <span style={{ color: idx === activeFailure.trace.length - 1 ? 'var(--rd)' : 'var(--tx)' }}>
+                        {stepName}
+                      </span>
+                      <span className="mono mu" style={{ fontSize: '11px' }}>
+                        STEP {idx + 1}
+                      </span>
+                    </summary>
+                    <div style={{ marginTop: '10px' }}>
+                      <pre
+                        style={{
+                          padding: '10px',
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          lineHeight: 1.5,
+                          overflowX: 'auto',
+                          fontFamily: 'monospace',
+                          color: idx === activeFailure.trace.length - 1 ? 'var(--rd)' : 'var(--tx)',
+                        }}
+                      >
+                        {content}
+                      </pre>
+                    </div>
+                  </details>
+                );
+              })}
             </div>
           </div>
         </>
