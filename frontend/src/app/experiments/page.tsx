@@ -193,11 +193,11 @@ export default function ExperimentsPage() {
       </div>
 
       {/* Loading & Error States */}
-      {isLoading && (
-        <div className="card text-center py-12">
-          <RefreshCw className="animate-spin mx-auto mb-3 text-[var(--cy)]" size={24} />
-          <div style={{ fontWeight: 600 }}>Loading Candidate Experiments...</div>
-          <p className="mu" style={{ fontSize: '12px', marginTop: '4px' }}>
+      {isLoading && experiments.length === 0 && (
+        <div className="card text-center py-8">
+          <RefreshCw className="animate-spin mx-auto mb-2 text-[var(--cy)]" size={20} />
+          <div style={{ fontWeight: 600, fontSize: '13px' }}>Loading Candidate Experiments...</div>
+          <p className="mu" style={{ fontSize: '11px', marginTop: '2px' }}>
             Fetching 60/20/20 generalization splits and regression verifications
           </p>
         </div>

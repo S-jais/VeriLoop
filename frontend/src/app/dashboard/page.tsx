@@ -7,6 +7,7 @@ import { NEMOTRON_MODEL_ID, INFERENCE_PROVIDER, SPONSOR_STRIP } from '@/lib/conf
 import { useDataSource } from '@/lib/useDataSource';
 import { Play, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Cpu, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import AddAgentWizard from '@/components/AddAgentWizard';
 
 const TAXONOMY_CATEGORIES = [
   'POLICY_FAILURE',
@@ -22,6 +23,7 @@ const STAGES = ['Test', 'Diagnose', 'Intervene', 'Validate', 'Prove'];
 
 export default function DashboardPage() {
   const [isRunning, setIsRunning] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [progressEvents, setProgressEvents] = useState<EvalProgressEvent[]>([]);
   const [currentStageName, setCurrentStageName] = useState<string>('');
   const [currentProgressPct, setCurrentProgressPct] = useState<number>(0);
@@ -125,7 +127,7 @@ export default function DashboardPage() {
           <p className="lead" style={{ fontSize: 'clamp(14px, 2.5vw, 18px)' }}>
             Test. Diagnose. Intervene. Validate. Prove.
           </p>
-          <div className="fl" style={{ gap: '10px' }}>
+          <div className="fl" style={{ gap: '10px', flexWrap: 'wrap' }}>
             <button
               className="btn p whitespace-nowrap"
               onClick={handleRunEvaluation}
@@ -133,6 +135,12 @@ export default function DashboardPage() {
             >
               <Play size={13} fill="currentColor" />
               <span>{isRunning ? 'Running evaluation...' : 'Run Evaluation'}</span>
+            </button>
+            <button
+              className="btn whitespace-nowrap"
+              onClick={() => setShowWizard(true)}
+            >
+              <span>+ Connect Agent</span>
             </button>
             <Link className="btn whitespace-nowrap" href="/reports">
               View latest report
@@ -484,6 +492,13 @@ export default function DashboardPage() {
           VeriLoop Autonomous Reliability Engineering Fleet · Global AI Hackathon Edition
         </div>
       </footer>
+
+      {/* Add Agent Wizard Modal */}
+      <AddAgentWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onAgentAdded={() => refetch()}
+      />
     </div>
   );
 }

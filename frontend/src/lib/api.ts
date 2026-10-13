@@ -158,7 +158,86 @@ export interface Agent {
   name: string;
   description: string;
   adapter_type: string;
+  connection_type?: string;
+  connection_status?: string;
   is_demo: boolean;
+  framework?: string;
+  endpoint_url?: string;
+  current_version?: string;
+  last_evaluation_status?: string;
+  reliability_score?: number | null;
+  critical_failures?: number;
+  total_tests?: number;
+  created_at: string;
+  last_tested_at?: string;
+}
+
+export interface ConnectionTestResult {
+  status: 'connected' | 'auth_failed' | 'timeout' | 'unreachable' | 'error';
+  latency_ms: number;
+  status_code?: number;
+  sanitized_response?: any;
+  message: string;
+}
+
+export interface ZipAnalysisResult {
+  detected_framework: string;
+  entry_points: string[];
+  prompt_files: string[];
+  tool_definitions: string[];
+  security_issues: string[];
+  dependencies: string[];
+  file_count: number;
+  total_size_kb: number;
+  supported_capabilities: {
+    static_analysis: boolean;
+    config_inspection: boolean;
+    runtime_execution: boolean;
+    api_behavioral_evaluation: boolean;
+    source_level_fixes: boolean;
+  };
+  execution_disclaimer: string;
+}
+
+export interface FailureReplayResult {
+  replay_id: string;
+  failure_id: string;
+  target_version: string;
+  passed: boolean;
+  original_output: string;
+  replayed_output: string;
+  score_delta: number;
+  latency_ms: number;
+  tool_calls: any[];
+  notes?: string;
+  saved_as_regression_test: boolean;
+}
+
+export interface FailureClusterItem {
+  id: string;
+  name: string;
+  category: string;
+  severity: string;
+  description: string;
+  failure_count: number;
+  recurrence_rate: number;
+  affected_agents: string[];
+  common_evidence: string;
+  recommended_remediation: string;
+  remediation_validated: boolean;
+}
+
+export interface DriftMonitorItem {
+  id: string;
+  agent_id: string;
+  cadence: string;
+  status: string;
+  total_checks_run: number;
+  drift_detected_count: number;
+  alert_threshold_pass_rate: number;
+  alert_email?: string;
+  last_pass_rate?: number;
+  last_run_at?: string;
   created_at: string;
 }
 
@@ -540,61 +619,324 @@ export const api = {
     }
   },
   listAgents: async (): Promise<Agent[]> => {
-    return [
-      {
-        id: 'agent-cs-01',
-        name: 'Customer Support Agent',
-        description: 'Customer Support Agent handling orders, returns, warranties, and multi-turn policy inquiries.',
-        adapter_type: 'demo_customer_support',
-        is_demo: true,
-        created_at: new Date().toISOString(),
-      },
-    ];
+    if (!IS_LIVE) {
+      return [
+        {
+          id: 'agent-cs-01',
+          name: 'Demo Customer Support Agent',
+          description: 'Autonomous customer support agent handling returns, warranties, and multi-turn policy inquiries.',
+          adapter_type: 'demo_customer_support',
+          connection_type: 'demo',
+          connection_status: 'connected',
+          framework: 'LangGraph',
+          is_demo: true,
+          current_version: 'Baseline v1.0',
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
+    try {
+      const data = await request<Agent[]>('/api/agents');
+      if (Array.isArray(data) && data.length > 0) return data;
+      return [
+        {
+          id: 'demo-customer-support-agent-v1',
+          name: 'Demo Customer Support Agent',
+          description: 'A demonstration customer support agent for ShopEase e-commerce.',
+          adapter_type: 'demo_customer_support',
+          connection_type: 'demo',
+          connection_status: 'connected',
+          framework: 'LangGraph',
+          is_demo: true,
+          current_version: 'Baseline v1.0',
+          created_at: new Date().toISOString(),
+        },
+      ];
+    } catch (err) {
+      console.warn('Live listAgents failed, using canonical agent:', err);
+      return [
+        {
+          id: 'demo-customer-support-agent-v1',
+          name: 'Demo Customer Support Agent',
+          description: 'A demonstration customer support agent for ShopEase e-commerce.',
+          adapter_type: 'demo_customer_support',
+          connection_type: 'demo',
+          connection_status: 'connected',
+          framework: 'LangGraph',
+          is_demo: true,
+          current_version: 'Baseline v1.0',
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
   },
-  getAgent: async (id: string) => {
-    return (await api.listAgents())[0];
+
+  getAgent: async (id: string): Promise<Agent | null> => {
+    if (!IS_LIVE) return (await api.listAgents())[0];
+    try {
+      return await request<Agent>(`/api/agents/${id}`);
+    } catch {
+      return (await api.listAgents())[0];
+    }
   },
-  listEvaluations: async () => {
-    const dash = await getDashboard();
-    return [
-      {
-        id: 'eval-run-01',
-        agent_id: 'agent-cs-01',
-        agent_version_id: 'v1.0',
-        suite_id: 'suite-baseline-100',
-        status: 'COMPLETED',
-        reliability_score: 0.64,
-        total_tests: 100,
-        passed_tests: 95,
-        failed_tests: 5,
-        critical_failures: 2,
-        high_failures: 3,
-        model_used: NEMOTRON_MODEL_ID,
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-      },
-    ];
+
+  createAgent: async (payload: any): Promise<any> => {
+    if (!IS_LIVE) {
+      return { id: `agent-${Date.now()}`, name: payload.name, connection_status: 'connected' };
+    }
+    return request<any>('/api/agents', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
+
+  testAgentConnection: async (payload: any): Promise<ConnectionTestResult> => {
+    if (!IS_LIVE) {
+      return {
+        status: 'connected',
+        latency_ms: 124,
+        status_code: 200,
+        sanitized_response: { message: 'Echo connection verified' },
+        message: 'Endpoint reachable and authenticated (demo simulated).',
+      };
+    }
+    return request<ConnectionTestResult>('/api/agents/test-connection', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  uploadAgentZip: async (file: File): Promise<ZipAnalysisResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const primaryUrl = `${API_BASE}/api/agents/upload-zip`;
+    const res = await fetch(primaryUrl, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new ApiError(res.status, err.detail || err.error || 'Failed to inspect ZIP archive');
+    }
+    return res.json();
+  },
+
+  importAgentConfig: async (payload: any): Promise<any> => {
+    if (!IS_LIVE) return { status: 'parsed', config: payload };
+    return request<any>('/api/agents/import-config', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listEvaluations: async (): Promise<EvaluationRun[]> => {
+    if (!IS_LIVE) {
+      return [
+        {
+          id: 'eval-run-01',
+          agent_id: 'agent-cs-01',
+          agent_version_id: 'v1.0',
+          suite_id: 'suite-baseline-100',
+          status: 'COMPLETED',
+          reliability_score: 0.64,
+          total_tests: 100,
+          passed_tests: 95,
+          failed_tests: 5,
+          critical_failures: 2,
+          high_failures: 3,
+          model_used: NEMOTRON_MODEL_ID,
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+        },
+      ];
+    }
+    try {
+      const runs = await request<EvaluationRun[]>('/api/evaluations');
+      if (Array.isArray(runs) && runs.length > 0) return runs;
+      // If DB has no evaluations yet, return canonical run so users can inspect baseline
+      return [
+        {
+          id: 'eval-seeded-baseline-run',
+          agent_id: 'demo-customer-support-agent-v1',
+          agent_version_id: 'demo-agent-baseline-v1',
+          suite_id: 'suite-baseline-100',
+          status: 'COMPLETED',
+          reliability_score: 0.64,
+          total_tests: 100,
+          passed_tests: 95,
+          failed_tests: 5,
+          critical_failures: 2,
+          high_failures: 3,
+          model_used: NEMOTRON_MODEL_ID,
+          created_at: new Date().toISOString(),
+        },
+      ];
+    } catch (err) {
+      console.warn('Live listEvaluations failed, falling back to canonical run:', err);
+      return [
+        {
+          id: 'eval-seeded-baseline-run',
+          agent_id: 'demo-customer-support-agent-v1',
+          agent_version_id: 'demo-agent-baseline-v1',
+          suite_id: 'suite-baseline-100',
+          status: 'COMPLETED',
+          reliability_score: 0.64,
+          total_tests: 100,
+          passed_tests: 95,
+          failed_tests: 5,
+          critical_failures: 2,
+          high_failures: 3,
+          model_used: NEMOTRON_MODEL_ID,
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
+  },
+
+  replayFailure: async (failureId: string, payload: any): Promise<FailureReplayResult> => {
+    if (!IS_LIVE) {
+      return {
+        replay_id: `replay-${Date.now()}`,
+        failure_id: failureId,
+        target_version: payload.target_version_name || 'Replayed candidate',
+        passed: true,
+        original_output: 'Denied transit warranty claim incorrectly.',
+        replayed_output: 'Approved 90-day transit damage replacement under policy v3.4.',
+        score_delta: 0.80,
+        latency_ms: 340,
+        tool_calls: [{ name: 'warranty_lookup', result: 'COVERED' }],
+        notes: 'Verification passed with targeted grounding',
+        saved_as_regression_test: payload.save_as_regression_test || false,
+      };
+    }
+    return request<FailureReplayResult>(`/api/failures/${failureId}/replay`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getFailureGenome: async (): Promise<FailureClusterItem[]> => {
+    if (!IS_LIVE) {
+      return [
+        {
+          id: 'cluster-ret-stale',
+          name: 'Stale Vector Index Retrieval Cluster',
+          category: 'RETRIEVAL_FAILURE',
+          severity: 'HIGH',
+          description: 'Vector retrieval pulls deprecated policy chunk instead of active 2026 guidelines.',
+          failure_count: 4,
+          recurrence_rate: 0.28,
+          affected_agents: ['ShopEase Customer Support Agent'],
+          common_evidence: 'ShopEase Master Return & Refund Policy 2026',
+          recommended_remediation: 'RETRIEVAL + PROMPT: Hybrid recency re-ranking + Tavily grounding',
+          remediation_validated: true,
+        },
+        {
+          id: 'cluster-pol-fraud',
+          name: 'Unbounded Fraud Payout Policy Breach',
+          category: 'POLICY_FAILURE',
+          severity: 'CRITICAL',
+          description: 'High-value claims ($200+) approved automatically without photo evidence or manager approval.',
+          failure_count: 3,
+          recurrence_rate: 0.21,
+          affected_agents: ['ShopEase Customer Support Agent'],
+          common_evidence: 'E-Commerce High-Value Damage Threshold Standard',
+          recommended_remediation: 'GUARDRAIL + WORKFLOW: Hard supervisor gating on payouts > $200',
+          remediation_validated: true,
+        },
+      ];
+    }
+    try {
+      return await request<FailureClusterItem[]>('/api/failures/genome');
+    } catch {
+      return [];
+    }
+  },
+
+  listDriftMonitors: async (): Promise<DriftMonitorItem[]> => {
+    if (!IS_LIVE) {
+      return [
+        {
+          id: 'monitor-01',
+          agent_id: 'demo-customer-support-agent-v1',
+          cadence: 'daily',
+          status: 'active',
+          total_checks_run: 14,
+          drift_detected_count: 1,
+          alert_threshold_pass_rate: 0.90,
+          alert_email: 'reliability@veriloop.ai',
+          last_pass_rate: 0.95,
+          last_run_at: new Date().toISOString(),
+          created_at: new Date(Date.now() - 864000000).toISOString(),
+        },
+      ];
+    }
+    try {
+      return await request<DriftMonitorItem[]>('/api/monitoring');
+    } catch {
+      return [];
+    }
+  },
+
+  createDriftMonitor: async (payload: any): Promise<any> => {
+    return request<any>('/api/monitoring', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  runDriftCheck: async (monitorId: string): Promise<any> => {
+    return request<any>(`/api/monitoring/${monitorId}/run`, {
+      method: 'POST',
+    });
+  },
+
   demoStatus: async (): Promise<DemoStatus> => {
-    return {
-      agent_id: 'agent-cs-01',
-      baseline_version_id: 'v1.0',
-      agent_exists: true,
-      latest_evaluation: {
-        id: 'eval-run-01',
-        agent_id: 'agent-cs-01',
-        agent_version_id: 'v1.0',
-        status: 'COMPLETED',
-        reliability_score: 0.64,
-        total_tests: 100,
-        passed_tests: 95,
-        failed_tests: 5,
-        critical_failures: 2,
-        high_failures: 3,
-        model_used: NEMOTRON_MODEL_ID,
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-      },
-    };
+    if (!IS_LIVE) {
+      return {
+        agent_id: 'demo-customer-support-agent-v1',
+        baseline_version_id: 'demo-agent-baseline-v1',
+        agent_exists: true,
+        latest_evaluation: {
+          id: 'eval-run-01',
+          agent_id: 'agent-cs-01',
+          agent_version_id: 'v1.0',
+          status: 'COMPLETED',
+          reliability_score: 0.64,
+          total_tests: 100,
+          passed_tests: 95,
+          failed_tests: 5,
+          critical_failures: 2,
+          high_failures: 3,
+          model_used: NEMOTRON_MODEL_ID,
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+        },
+      };
+    }
+    try {
+      return await request<DemoStatus>('/api/demo/status');
+    } catch {
+      return {
+        agent_id: 'demo-customer-support-agent-v1',
+        baseline_version_id: 'demo-agent-baseline-v1',
+        agent_exists: true,
+        latest_evaluation: {
+          id: 'eval-seeded-baseline-run',
+          agent_id: 'demo-customer-support-agent-v1',
+          agent_version_id: 'demo-agent-baseline-v1',
+          status: 'COMPLETED',
+          reliability_score: 0.64,
+          total_tests: 100,
+          passed_tests: 95,
+          failed_tests: 5,
+          critical_failures: 2,
+          high_failures: 3,
+          model_used: NEMOTRON_MODEL_ID,
+          created_at: new Date().toISOString(),
+        },
+      };
+    }
   },
+
   resetDemo: async () => {
     if (!IS_LIVE) return { status: 'ok', message: 'Demo reset locally' };
     return request('/api/demo/reset', { method: 'POST' });

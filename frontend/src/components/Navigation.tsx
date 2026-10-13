@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   FileText,
   Settings,
+  Radar,
   X,
 } from 'lucide-react';
 import { useDataSource } from '@/lib/useDataSource';
@@ -49,6 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/evidence', label: 'Evidence', icon: Search },
       { href: '/regression', label: 'Regression Firewall', icon: ShieldCheck },
+      { href: '/monitoring', label: 'Drift Monitoring', icon: Radar },
       { href: '/reports', label: 'Reports', icon: FileText },
     ],
   },

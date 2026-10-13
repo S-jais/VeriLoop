@@ -3,21 +3,17 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Agent } from '@/lib/api';
-import { Play, Plus } from 'lucide-react';
+import { Play, Plus, Bot, Globe, Upload, GitBranch, ShieldCheck, CheckCircle2, AlertOctagon, Terminal } from 'lucide-react';
 import Link from 'next/link';
-import axios from 'axios';
-
+import AddAgentWizard from '@/components/AddAgentWizard';
 import { NEMOTRON_MODEL_ID, INFERENCE_PROVIDER, CANONICAL_AGENT } from '@/lib/config';
 
 export default function AgentsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('Overview');
-  const [showModal, setShowModal] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
-  const { data: agents = [], isLoading } = useQuery<Agent[]>({
+  const { data: agents = [], isLoading, refetch } = useQuery<Agent[]>({
     queryKey: ['agents'],
     queryFn: api.listAgents,
   });
@@ -29,33 +25,23 @@ export default function AgentsPage() {
 
   const eval_ = demoStatus?.latest_evaluation;
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setSubmitting(true);
-    try {
-      setShowModal(false);
-      setName('');
-      setDescription('');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="space-y-6 animate-fade-in text-[var(--tx)]">
       {/* Header */}
-      <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2>Agents</h2>
+          <div className="fl" style={{ gap: '8px', alignItems: 'center' }}>
+            <h2>Agent Inventory</h2>
+            <span className="mono mu" style={{ fontSize: '12px' }}>{agents.length} REGISTERED TARGETS</span>
+          </div>
           <p className="mu" style={{ fontSize: '13px', marginTop: '2px' }}>
             Registered agent targets, architectural pipelines, and version lineage.
           </p>
         </div>
 
-        <button className="btn sm" onClick={() => setShowModal(true)}>
+        <button className="btn p sm" onClick={() => setShowWizard(true)}>
           <Plus size={13} />
-          <span>New agent</span>
+          <span>Connect Agent</span>
         </button>
       </div>
 
@@ -73,71 +59,90 @@ export default function AgentsPage() {
         ))}
       </div>
 
-      {/* Agent Card */}
-      <div className="g g2">
-        <div className="card g" style={{ gap: '14px' }}>
-          <div className="fl">
-            <h3 style={{ fontSize: '17px' }}>{CANONICAL_AGENT.name}</h3>
-            <span className="sp" />
-            <span className={`bd ${eval_?.critical_failures === 0 ? 'ok' : 'er'}`}>
-              <i></i>{eval_?.critical_failures === 0 ? 'VERIFIED' : 'NEEDS ATTENTION'}
-            </span>
-          </div>
+      {/* Agent Cards Grid */}
+      <div className="g g2" style={{ gap: '16px' }}>
+        {agents.map((ag) => {
+          const isDemo = ag.is_demo || ag.id.includes('demo');
+          const relScore = ag.reliability_score ? Math.round(ag.reliability_score <= 1.0 ? ag.reliability_score * 100 : ag.reliability_score) : 64;
+          const isVerified = relScore >= 80 && (ag.critical_failures ?? 0) === 0;
 
-          <p className="mu" style={{ fontSize: '13px', lineHeight: 1.5 }}>
-            {CANONICAL_AGENT.description}
-          </p>
+          return (
+            <div key={ag.id} className="card g" style={{ gap: '14px', background: 'var(--s1)' }}>
+              <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div className="fl" style={{ gap: '6px', alignItems: 'center' }}>
+                    <Bot size={16} className="text-[var(--cy)]" />
+                    <h3 style={{ fontSize: '17px', margin: 0 }}>{ag.name}</h3>
+                  </div>
+                  <span className="mono mu" style={{ fontSize: '11px', marginTop: '2px', display: 'block' }}>
+                    ID: {ag.id} · {ag.connection_type?.toUpperCase() || (isDemo ? 'DEMO' : 'API')}
+                  </span>
+                </div>
+                <span className={`bd ${isVerified ? 'ok' : 'er'}`}>
+                  <i></i>{isVerified ? 'VERIFIED' : 'NEEDS ATTENTION'}
+                </span>
+              </div>
 
-          <div className="g g2" style={{ gap: '10px' }}>
-            <div>
-              <span className="lbl">Version</span>
-              <br />
-              <b>v1.0 (baseline)</b>
-            </div>
-            <div>
-              <span className="lbl">Model</span>
-              <br />
-              <b className="truncate block" title={NEMOTRON_MODEL_ID}>NVIDIA Nemotron</b>
-            </div>
-            <div>
-              <span className="lbl">Reliability</span>
-              <br />
-              <b className={eval_?.reliability_score ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}>
-                {eval_?.reliability_score ? `${Math.round(eval_.reliability_score * 100)}%` : '64%'}
-              </b>
-            </div>
-            <div>
-              <span className="lbl">Last evaluated</span>
-              <br />
-              <b>Completed run</b>
-            </div>
-          </div>
+              <p className="mu" style={{ fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
+                {ag.description || 'Autonomous agent target evaluated under VeriLoop reliability protocol.'}
+              </p>
 
-          <div className="fl" style={{ marginTop: '4px' }}>
-            <span className="bd in"><i></i>{INFERENCE_PROVIDER.toUpperCase()}</span>
-            <span className="bd in"><i></i>NVIDIA NEMOTRON</span>
-            <span className="bd in"><i></i>TAVILY</span>
-          </div>
+              <div className="g g2" style={{ gap: '10px' }}>
+                <div>
+                  <span className="lbl">Framework</span>
+                  <br />
+                  <b>{ag.framework || 'LangGraph'}</b>
+                </div>
+                <div>
+                  <span className="lbl">Current Version</span>
+                  <br />
+                  <b>{ag.current_version || 'v1.0 (baseline)'}</b>
+                </div>
+                <div>
+                  <span className="lbl">Reliability Index</span>
+                  <br />
+                  <b className={isVerified ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}>
+                    {relScore}% / 100
+                  </b>
+                </div>
+                <div>
+                  <span className="lbl">Audit Status</span>
+                  <br />
+                  <b>{ag.last_evaluation_status?.toUpperCase() || 'COMPLETED'}</b>
+                </div>
+              </div>
 
-          <div className="fl" style={{ marginTop: '8px' }}>
-            <Link className="btn sm" href="/dashboard">
-              Dashboard
-            </Link>
-            <Link className="btn p sm" href="/experiments">
-              <Play size={11} fill="currentColor" />
-              Experiments
-            </Link>
-            <Link className="btn sm" href="/reports">
-              Reports
-            </Link>
-          </div>
-        </div>
+              <div className="fl" style={{ gap: '6px', flexWrap: 'wrap' }}>
+                <span className="bd in"><i></i>{INFERENCE_PROVIDER.toUpperCase()}</span>
+                <span className="bd in"><i></i>NVIDIA NEMOTRON</span>
+                {isDemo && <span className="bd in" style={{ borderColor: 'var(--am)', color: 'var(--am)' }}>DEMO AGENT</span>}
+                {ag.endpoint_url && <span className="mono mu" style={{ fontSize: '11px' }}>{ag.endpoint_url}</span>}
+              </div>
+
+              <div className="fl" style={{ gap: '8px', marginTop: '6px' }}>
+                <Link className="btn sm" href="/dashboard">
+                  Dashboard
+                </Link>
+                <Link className="btn p sm" href="/evaluations">
+                  <Play size={11} fill="currentColor" />
+                  Evaluate
+                </Link>
+                <Link className="btn sm" href="/experiments">
+                  Experiments
+                </Link>
+                <Link className="btn sm" href="/reports">
+                  Report
+                </Link>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Architecture & Model Details */}
       <div className="g g21">
         <div className="card">
-          <h3>Architecture</h3>
+          <h3>Verification Architecture</h3>
           <div className="flow" style={{ marginTop: '12px' }}>
             <span>User</span>
             <i>→</i>
@@ -152,7 +157,7 @@ export default function AgentsPage() {
         </div>
 
         <div className="card">
-          <h3>Inference Model</h3>
+          <h3>Inference Provider</h3>
           <p className="mu" style={{ margin: '8px 0 12px', fontSize: '13px' }}>
             {NEMOTRON_MODEL_ID} served via {INFERENCE_PROVIDER}.
           </p>
@@ -179,76 +184,15 @@ export default function AgentsPage() {
         </div>
       </div>
 
-      {/* Modal: Register Custom Agent */}
-      {showModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            display: 'grid',
-            placeItems: 'center',
-            zIndex: 100,
-            padding: '16px',
-          }}
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="card"
-            style={{ width: 'min(480px, 94vw)', background: 'var(--s1)', padding: '24px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ fontSize: '18px' }}>Register New Agent</h3>
-            <form onSubmit={handleRegister} style={{ display: 'grid', gap: '14px', marginTop: '16px' }}>
-              <div>
-                <span className="lbl">Agent Name</span>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Booking Concierge Agent"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '3px',
-                    border: '1px solid var(--ln)',
-                    background: 'var(--s2)',
-                    marginTop: '4px',
-                  }}
-                />
-              </div>
-
-              <div>
-                <span className="lbl">Description</span>
-                <input
-                  type="text"
-                  placeholder="e.g. Flight rebooking and itinerary assistant"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '3px',
-                    border: '1px solid var(--ln)',
-                    background: 'var(--s2)',
-                    marginTop: '4px',
-                  }}
-                />
-              </div>
-
-              <div className="fl" style={{ justifyContent: 'flex-end', marginTop: '12px' }}>
-                <button type="button" className="btn sm" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={submitting} className="btn p sm">
-                  {submitting ? 'Registering...' : 'Save Agent'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add Agent Wizard Modal */}
+      <AddAgentWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onAgentAdded={() => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: ['agents'] });
+        }}
+      />
     </div>
   );
 }

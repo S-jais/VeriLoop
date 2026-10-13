@@ -18,7 +18,8 @@ from pathlib import Path
 
 from app.core.nebius_provider import get_nebius_provider
 from app.core.config import get_settings
-from app.agents.demo_agent import create_adapter, AgentRunResult
+from app.agents.demo_agent import AgentRunResult
+from app.services.agent_adapters import get_agent_adapter
 from app.models.schemas import TestEvaluationOutput
 
 logger = logging.getLogger(__name__)
@@ -257,7 +258,7 @@ class EvaluationEngine:
         """
         Execute a single test case against the target agent and evaluate the result.
         """
-        adapter = create_adapter(adapter_type, config=agent_config)
+        adapter = get_agent_adapter(adapter_type, config=agent_config)
         start = time.time()
 
         # Role 2: Execute target agent

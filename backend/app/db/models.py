@@ -95,13 +95,35 @@ class Agent(Base):
     id = Column(String, primary_key=True, default=gen_uuid)
     name = Column(String, nullable=False)
     description = Column(Text)
-    adapter_type = Column(String, nullable=False)  # e.g. "demo_customer_support"
+    adapter_type = Column(String, nullable=False)  # e.g. "demo_customer_support", "http_webhook"
     is_demo = Column(Boolean, default=False)
+    connection_type = Column(String, default="demo")  # demo | api_endpoint | zip_upload | github_repo | config_import
+    endpoint_url = Column(String, nullable=True)
+    http_method = Column(String, default="POST")
+    auth_type = Column(String, default="none")  # none | bearer | api_key_header | basic
+    auth_header_name = Column(String, default="Authorization")
+    auth_token_masked = Column(String, nullable=True)
+    request_headers = Column(JSON, default=dict)
+    request_body_template = Column(JSON, nullable=True)
+    input_path = Column(String, default="input")
+    output_path = Column(String, default="response")
+    timeout_seconds = Column(Integer, default=15)
+    retry_count = Column(Integer, default=2)
+    connection_status = Column(String, default="connected")  # connected | auth_failed | timeout | unreachable | config_required | disabled
+    last_tested_at = Column(DateTime, nullable=True)
+    framework = Column(String, default="custom")
+    repository_url = Column(String, nullable=True)
+    repository_branch = Column(String, nullable=True)
+    artifact_hash = Column(String, nullable=True)
+    system_prompt = Column(Text, nullable=True)
+    tools_schema = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=now_utc)
     updated_at = Column(DateTime, default=now_utc, onupdate=now_utc)
 
     versions = relationship("AgentVersion", back_populates="agent")
     test_suites = relationship("TestSuite", back_populates="agent")
+    replays = relationship("FailureReplay", back_populates="agent")
+    drift_monitors = relationship("DriftMonitor", back_populates="agent")
 
 
 class AgentVersion(Base):
@@ -311,3 +333,83 @@ class Report(Base):
     title = Column(String, nullable=False)
     content = Column(JSON)  # structured report sections
     created_at = Column(DateTime, default=now_utc)
+
+
+class FailureReplay(Base):
+    """Execution record of a reproduced/replayed test failure."""
+    __tablename__ = "failure_replays"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    failure_id = Column(String, ForeignKey("failures.id"), nullable=False)
+    test_case_id = Column(String, ForeignKey("test_cases.id"), nullable=True)
+    agent_id = Column(String, ForeignKey("agents.id"), nullable=False)
+    target_version = Column(String, default="v1.0")
+    original_input = Column(Text, nullable=False)
+    original_output = Column(Text, nullable=True)
+    replayed_output = Column(Text, nullable=False)
+    passed = Column(Boolean, default=False)
+    original_score = Column(Float, default=0.0)
+    replayed_score = Column(Float, default=0.0)
+    latency_ms = Column(Integer, default=0)
+    tool_calls = Column(JSON, default=list)
+    evaluator_notes = Column(Text, nullable=True)
+    saved_as_regression_test = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=now_utc)
+
+    agent = relationship("Agent", back_populates="replays")
+
+
+class FailureCluster(Base):
+    """Failure Genome cluster grouping recurring failure modes."""
+    __tablename__ = "failure_clusters"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    name = Column(String, nullable=False)
+    category = Column(SAEnum(FailureCategory), default=FailureCategory.UNKNOWN)
+    severity = Column(SAEnum(FailureSeverity), default=FailureSeverity.MEDIUM)
+    description = Column(Text, nullable=False)
+    failure_count = Column(Integer, default=1)
+    recurrence_rate = Column(Float, default=0.0)
+    affected_agents = Column(JSON, default=list)
+    common_evidence = Column(Text, nullable=True)
+    recommended_remediation = Column(Text, nullable=True)
+    remediation_validated = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=now_utc)
+
+
+class DriftMonitor(Base):
+    """Automated scheduled drift monitoring configuration and telemetry."""
+    __tablename__ = "drift_monitors"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    agent_id = Column(String, ForeignKey("agents.id"), nullable=False)
+    suite_id = Column(String, ForeignKey("test_suites.id"), nullable=True)
+    is_active = Column(Boolean, default=True)
+    cadence = Column(String, default="daily")  # hourly | daily | weekly
+    alert_threshold_pct = Column(Float, default=5.0)
+    last_checked_at = Column(DateTime, nullable=True)
+    baseline_reliability_score = Column(Float, default=64.0)
+    latest_reliability_score = Column(Float, default=64.0)
+    drift_detected = Column(Boolean, default=False)
+    drift_summary = Column(Text, nullable=True)
+    notification_webhook = Column(String, nullable=True)
+    created_at = Column(DateTime, default=now_utc)
+
+    agent = relationship("Agent", back_populates="drift_monitors")
+
+
+class DatasetImport(Base):
+    """Test dataset import log with parsed case counts and column mappings."""
+    __tablename__ = "dataset_imports"
+
+    id = Column(String, primary_key=True, default=gen_uuid)
+    name = Column(String, nullable=False)
+    filename = Column(String, nullable=False)
+    format = Column(String, default="csv")  # csv | json
+    total_rows = Column(Integer, default=0)
+    valid_rows = Column(Integer, default=0)
+    invalid_rows = Column(Integer, default=0)
+    column_mapping = Column(JSON, default=dict)
+    sample_preview = Column(JSON, default=list)
+    created_at = Column(DateTime, default=now_utc)
+

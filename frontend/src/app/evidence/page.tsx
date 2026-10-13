@@ -131,7 +131,7 @@ export default function EvidencePage() {
       </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && evidenceList.length === 0 && (
         <div className="card text-center py-10">
           <RefreshCw className="animate-spin mx-auto mb-2 text-[var(--cy)]" size={20} />
           <p className="mu" style={{ fontSize: '13px' }}>Loading Tavily evidence items...</p>

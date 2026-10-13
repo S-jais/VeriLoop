@@ -51,4 +51,34 @@ async def init_db():
             await conn.execute(text("PRAGMA journal_mode=WAL"))
             await conn.execute(text("PRAGMA busy_timeout=60000"))
         await conn.run_sync(Base.metadata.create_all)
+
+        # Defensive column migrations for existing SQLite databases
+        if "sqlite" in settings.database_url:
+            agent_cols = [
+                ("connection_type", "VARCHAR DEFAULT 'demo'"),
+                ("endpoint_url", "VARCHAR"),
+                ("http_method", "VARCHAR DEFAULT 'POST'"),
+                ("auth_type", "VARCHAR DEFAULT 'none'"),
+                ("auth_header_name", "VARCHAR DEFAULT 'Authorization'"),
+                ("auth_token_masked", "VARCHAR"),
+                ("request_headers", "JSON"),
+                ("request_body_template", "JSON"),
+                ("input_path", "VARCHAR DEFAULT 'input'"),
+                ("output_path", "VARCHAR DEFAULT 'response'"),
+                ("timeout_seconds", "INTEGER DEFAULT 15"),
+                ("retry_count", "INTEGER DEFAULT 2"),
+                ("connection_status", "VARCHAR DEFAULT 'connected'"),
+                ("last_tested_at", "DATETIME"),
+                ("framework", "VARCHAR DEFAULT 'custom'"),
+                ("repository_url", "VARCHAR"),
+                ("repository_branch", "VARCHAR"),
+                ("artifact_hash", "VARCHAR"),
+                ("system_prompt", "TEXT"),
+                ("tools_schema", "JSON"),
+            ]
+            for col_name, col_type in agent_cols:
+                try:
+                    await conn.execute(text(f"ALTER TABLE agents ADD COLUMN {col_name} {col_type}"))
+                except Exception:
+                    pass  # column already exists or table freshly created
     logger.info("Database initialized successfully")
