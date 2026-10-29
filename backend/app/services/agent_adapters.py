@@ -148,7 +148,11 @@ class HttpAgentAdapter(AgentAdapter):
         if not is_safe:
             raise PermissionError(f"SSRF Safety Gate: {reason}")
 
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+        }
         if isinstance(self.request_headers, dict):
             headers.update(self.request_headers)
 
@@ -188,7 +192,33 @@ class HttpAgentAdapter(AgentAdapter):
                 latency_ms = int((time.time() - start_time) * 1000)
 
                 if resp.status_code >= 400:
-                    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                    raw_text = resp.text.strip()
+                    content_type = resp.headers.get("content-type", "").lower()
+
+                    # Cleanly format HTML error pages (e.g., Cloudflare 403 challenge, nginx 502, Vercel 404)
+                    if "html" in content_type or raw_text.startswith("<") or "<html" in raw_text.lower():
+                        import re
+                        title_match = re.search(r"<title>(.*?)</title>", raw_text, re.IGNORECASE)
+                        title = title_match.group(1).strip() if title_match else ""
+
+                        if resp.status_code == 403:
+                            msg = "HTTP 403 Forbidden: Access denied by target host"
+                            if "cloudflare" in raw_text.lower() or "challenge" in raw_text.lower() or "just a moment" in raw_text.lower():
+                                msg += " (Cloudflare Bot / WAF Challenge detected)"
+                            elif title:
+                                msg += f" ({title})"
+
+                            if "chatgpt.com" in self.endpoint_url.lower():
+                                msg += ". Note: 'https://chatgpt.com/' is a web browser interface and cannot accept API queries. For OpenAI models, use 'https://api.openai.com/v1/chat/completions' with your Bearer API key, or test with a webhook endpoint like https://httpbin.org/post."
+                            else:
+                                msg += ". The endpoint may require an API key / auth header or is protected by bot challenge. Ensure you provided an API endpoint instead of a web browser URL."
+                            raise RuntimeError(msg)
+                        else:
+                            clean_text = re.sub(r"<[^>]+>", " ", raw_text)
+                            clean_snippet = " ".join(clean_text.split())[:180]
+                            raise RuntimeError(f"HTTP {resp.status_code} ({title or 'HTML Error'}): {clean_snippet or 'Target returned an HTML page instead of API JSON.'}")
+                    else:
+                        raise RuntimeError(f"HTTP {resp.status_code}: {raw_text[:200]}")
 
                 try:
                     resp_json = resp.json()
@@ -223,8 +253,11 @@ class HttpAgentAdapter(AgentAdapter):
 
         except Exception as e:
             latency_ms = int((time.time() - start_time) * 1000)
-            logger.error("Error invoking HTTP agent: %s", str(e))
-            raise RuntimeError(f"Agent endpoint error: {str(e)}")
+            err_str = str(e)
+            if not err_str.startswith("Agent endpoint error:"):
+                err_str = f"Agent endpoint error: {err_str}"
+            logger.error("Error invoking HTTP agent: %s", err_str)
+            raise RuntimeError(err_str)
 
 
 def test_agent_connection(
@@ -255,6 +288,26 @@ def test_agent_connection(
             "status_code": None,
         }
 
+    # Proactive check for common browser web UI URLs that are not API endpoints
+    import urllib.parse
+    parsed = urllib.parse.urlparse(endpoint_url.lower())
+    netloc = parsed.netloc or parsed.path.split('/')[0]
+    if any(web_domain in netloc for web_domain in ["chatgpt.com", "chat.openai.com", "claude.ai", "gemini.google.com"]):
+        return {
+            "status": "error",
+            "connected": False,
+            "error_type": "INVALID_API_ENDPOINT",
+            "message": (
+                f"'{endpoint_url}' is a web user interface, not an API endpoint. "
+                "Web applications block automated HTTP calls with Cloudflare HTTP 403 Forbidden. "
+                "To evaluate OpenAI/ChatGPT models, use the official API endpoint "
+                "'https://api.openai.com/v1/chat/completions' with your Bearer API key, "
+                "or test with a REST webhook/endpoint (e.g. https://httpbin.org/post)."
+            ),
+            "latency_ms": 0,
+            "status_code": 403,
+        }
+
     config = {
         "endpoint_url": endpoint_url,
         "http_method": http_method,
@@ -276,24 +329,26 @@ def test_agent_connection(
         preview = run_res.response[:400]
 
         return {
-            "status": "success",
+            "status": "connected",
             "connected": True,
             "message": "Agent connection verified successfully.",
             "latency_ms": latency,
             "status_code": run_res.metadata.get("status_code", 200),
             "response_preview": preview,
+            "sanitized_response": preview,
             "tool_calls_detected": len(run_res.tool_calls),
         }
     except Exception as e:
         latency = int((time.time() - start_time) * 1000)
         err_msg = str(e)
+        code = 403 if "403" in err_msg else (502 if "502" in err_msg else (404 if "404" in err_msg else None))
         return {
             "status": "error",
             "connected": False,
             "error_type": "CONNECTION_FAILED",
             "message": err_msg,
             "latency_ms": latency,
-            "status_code": None,
+            "status_code": code,
             "response_preview": None,
         }
 
@@ -303,10 +358,14 @@ def get_agent_adapter(adapter_type: str, config: Optional[dict] = None) -> Agent
     Unified factory for agent adapters.
     Supports built-in demo customer support agent and external HTTP REST / Webhook agents.
     """
-    if adapter_type == "demo_customer_support":
+    cfg = config or {}
+    if (
+        adapter_type in ("http_webhook", "http_json", "api", "api_endpoint", "openai_compatible", "custom_api")
+        or bool(cfg.get("endpoint_url"))
+    ):
+        return HttpAgentAdapter(cfg)
+    elif adapter_type == "demo_customer_support":
         return DemoCustomerSupportAdapter(config=config)
-    elif adapter_type in ("http_webhook", "api_endpoint", "openai_compatible", "custom_api"):
-        return HttpAgentAdapter(config or {})
     else:
         # Fallback to demo adapter for backwards compatibility
         return DemoCustomerSupportAdapter(config=config)

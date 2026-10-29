@@ -21,40 +21,40 @@ export const NEBIUS_BASE_URL =
 export const PROBE_MODEL =
   process.env.NEXT_PUBLIC_PROBE_MODEL ||
   process.env.PROBE_MODEL ||
-  'nvidia/Nemotron-3_5-Lightning';
+  'nvidia/nemotron-3-nano-30b-a3b';
 
 export const DIAGNOSIS_MODEL =
   process.env.NEXT_PUBLIC_DIAGNOSIS_MODEL ||
   process.env.DIAGNOSIS_MODEL ||
-  'nvidia/Nemotron-3_5-Lightning';
+  'nvidia/nemotron-3-ultra-550b-a55b';
 
 export const JUDGE_MODEL =
   process.env.NEXT_PUBLIC_JUDGE_MODEL ||
   process.env.JUDGE_MODEL ||
-  'nvidia/Nemotron-3_5-Lightning';
+  'nvidia/nemotron-3-super-120b-a12b';
 
 export const FAST_MODEL =
   process.env.NEXT_PUBLIC_FAST_MODEL ||
   process.env.FAST_MODEL ||
-  'nvidia/Nemotron-3_5-Lightning';
+  'nvidia/nemotron-3-nano-30b-a3b';
 
 export const INFERENCE_PROVIDER_NAME = 'Nebius Token Factory';
 export const REASONING_PROVIDER_NAME = 'NVIDIA Nemotron';
 
 export const MODEL_CONFIGS: ModelJobMapping[] = [
   {
-    job: 'Adversarial Probe Generation',
+    job: 'Adversarial Probe Generation & Candidate Drafting',
     model: PROBE_MODEL,
     inference: INFERENCE_PROVIDER_NAME,
-    role: 'Synthesizes multi-turn stress test probes across 60/20/20 generalization splits',
+    role: 'Synthesizes multi-turn stress test probes and drafts candidate agent interventions across 60/20/20 generalization splits',
     tokenCap: 4096,
     temperature: 0.2,
   },
   {
-    job: 'Causal Failure Diagnosis',
+    job: 'Causal Failure & Root Cause Diagnosis',
     model: DIAGNOSIS_MODEL,
     inference: INFERENCE_PROVIDER_NAME,
-    role: 'Constructs root-cause DAGs and identifies retrieval, policy, and prompt escape vectors',
+    role: 'Performs 550B causal root-cause analysis, constructs dependency DAGs, and identifies retrieval, policy, and prompt escape vectors',
     tokenCap: 4096,
     temperature: 0.1,
   },
@@ -62,7 +62,7 @@ export const MODEL_CONFIGS: ModelJobMapping[] = [
     job: 'Regression Judging & Holdout Certification',
     model: JUDGE_MODEL,
     inference: INFERENCE_PROVIDER_NAME,
-    role: 'Evaluates agent responses, audits policy adherence, and gates candidate promotions',
+    role: 'Evaluates agent responses, audits policy adherence, and gates candidate promotions via zero-regression firewall',
     tokenCap: 4096,
     temperature: 0.0,
   },

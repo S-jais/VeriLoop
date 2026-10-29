@@ -18,6 +18,17 @@ const INTERVENTION_TYPES = [
 
 const STAGES = ['Test', 'Diagnose', 'Intervene', 'Validate', 'Prove'];
 
+function normalizeStage(stage?: string): string {
+  if (!stage) return 'Test';
+  const s = stage.toLowerCase();
+  if (s.includes('test') || s.includes('generating_tests') || s.includes('running_tests')) return 'Test';
+  if (s.includes('fail') || s.includes('diagnos') || s.includes('evidence') || s.includes('research')) return 'Diagnose';
+  if (s.includes('interven')) return 'Intervene';
+  if (s.includes('validat')) return 'Validate';
+  if (s.includes('prov') || s.includes('complete')) return 'Prove';
+  return stage;
+}
+
 export default function ExperimentsPage() {
   const [selectedIntervention, setSelectedIntervention] = useState('RETRIEVAL');
   const [isRunningEval, setIsRunningEval] = useState(false);
@@ -48,11 +59,13 @@ export default function ExperimentsPage() {
       'v1.0',
       (event) => {
         setProgressEvents((prev) => [...prev, event]);
-        setCurrentStageName(event.stage);
+        setCurrentStageName(normalizeStage(event.stage));
         setCurrentProgressPct(event.progress ?? 0);
       },
       () => {
         setIsRunningEval(false);
+        setCurrentProgressPct(100);
+        setCurrentStageName('Prove');
         refetch();
       },
       (err) => {

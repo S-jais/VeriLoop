@@ -41,7 +41,10 @@ VeriLoop is designed as an autonomous reliability engineering platform for AI ag
 - **Graceful Fallback**: If unconfigured or network-isolated, VeriLoop automatically engages its deterministic evaluation provider with transparent `DEMO FALLBACK` badges in the UI.
 
 ### 2.2 NVIDIA Open-Source Foundation Models
-- **Pipeline Models**: `nvidia/Nemotron-3_5-Lightning` (Probe, Diagnosis, Judge, Fast jobs)
+- **Pipeline Models**: Specialized Nemotron 3 architecture
+  - `nvidia/nemotron-3-nano-30b-a3b`: Adversarial probe generation, candidate drafting/intervention synthesis, and fast semantic triage.
+  - `nvidia/nemotron-3-ultra-550b-a55b`: Deep causal failure and root cause diagnosis.
+  - `nvidia/nemotron-3-super-120b-a12b`: Primary reasoning model, regression judging, and holdout certification firewall.
   - Used for substantive reasoning tasks: generating adversarial attack vectors, extracting causal graphs from execution traces, synthesizing intervention code/prompts, and arbitrating regression gates.
 
 ### 2.3 Tavily AI Research

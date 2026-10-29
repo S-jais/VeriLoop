@@ -39,7 +39,7 @@ export default function LandingPage() {
   const router = useRouter();
 
   const handleRunEvaluation = () => {
-    router.push('/dashboard');
+    router.push('/dashboard?run=true');
   };
 
   return (

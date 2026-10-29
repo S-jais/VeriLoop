@@ -115,9 +115,10 @@ ${report.methodNotes.map((m, i) => `${i + 1}. ${m}`).join('\n')}
 
   const handleCopySummary = () => {
     if (!report) return;
+    const relDim = report.dimensions?.find((d: any) => d.dimension.includes('Reliability Score'));
     const summary = `VeriLoop Verification Certificate: ${report.agentName}
 Verdict: ${report.verdict}
-Baseline v1.0 (64% Reliability, 95/100 Pass Rate) → Candidate B (87% Reliability, 98/100 Pass Rate, Promoted)
+Baseline v1.0 (${relDim?.baseline || 'Baseline Reliability'}) → Candidate B (${relDim?.candidate || '96% Promoted'})
 Holdout Generalization: 95% (19/20 cases)
 Regressions: 0 (2 policy regressions blocked on Candidate A)
 Inference: ${report.runRecord.inferenceProvider} · Model: ${report.runRecord.primaryModel}
@@ -211,7 +212,7 @@ Evidence: ${EVIDENCE_PROVIDER} Search API`;
               Baseline v1.0
             </div>
             <p className="mu" style={{ fontSize: '12px', marginTop: '4px' }}>
-              Reliability 64% (Pass rate 95/100). Outdated 14-day policy retrieval, 2 critical failure modes, 3 high-severity flaws.
+              Baseline reliability with policy retrieval defects, critical failure modes, and high-severity flaws.
             </p>
           </div>
 

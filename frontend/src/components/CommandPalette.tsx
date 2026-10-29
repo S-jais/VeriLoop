@@ -25,7 +25,11 @@ export function CommandPalette() {
       title: 'Run Evaluation',
       category: 'Actions',
       action: () => {
-        router.push('/dashboard');
+        if (typeof window !== 'undefined' && window.location.pathname === '/dashboard') {
+          window.dispatchEvent(new CustomEvent('veriloop:trigger-run-evaluation'));
+        } else {
+          router.push('/dashboard?run=true');
+        }
       },
       icon: Play,
     },

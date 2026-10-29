@@ -13,7 +13,7 @@ import io
 import zipfile
 from datetime import datetime, timezone
 
-from app.services.agent_adapters import validate_url_for_ssrf, test_agent_connection
+from app.services.agent_adapters import validate_url_for_ssrf
 from app.services.project_analyzer import SecureZipValidator, ProjectAnalyzer
 from app.api.routes.datasets import _parse_csv_dataset, _parse_json_dataset
 from app.db.models import FailureCategory, FailureSeverity
@@ -24,17 +24,17 @@ from app.db.models import FailureCategory, FailureSeverity
 def test_ssrf_protection_blocks_private_and_loopback():
     """Verify SSRF validator rejects private IPs, loopbacks, and cloud metadata endpoints."""
     # Loopback
-    is_safe, reason = validate_url_for_ssrf("http://127.0.0.1:8000/api")
+    is_safe, reason = validate_url_for_ssrf("http://127.0.0.1:8000/api", allow_localhost_for_dev=False)
     assert not is_safe
-    assert "Private or loopback" in reason or "Loopback" in reason
+    assert "restricted" in reason.lower() or "loopback" in reason.lower()
 
-    is_safe, reason = validate_url_for_ssrf("http://localhost:3000")
+    is_safe, reason = validate_url_for_ssrf("http://localhost:3000", allow_localhost_for_dev=False)
     assert not is_safe
 
     # Cloud Metadata Service (AWS/GCP/Azure)
     is_safe, reason = validate_url_for_ssrf("http://169.254.169.254/latest/meta-data")
     assert not is_safe
-    assert "Metadata" in reason or "Private" in reason
+    assert "restricted" in reason.lower() or "forbidden" in reason.lower()
 
     # Private RFC 1918 CIDRs
     is_safe, _ = validate_url_for_ssrf("http://10.0.0.1/chat")
@@ -51,7 +51,7 @@ def test_ssrf_protection_allows_valid_public_urls():
     """Verify SSRF validator allows legitimate public HTTPS endpoints."""
     is_safe, reason = validate_url_for_ssrf("https://api.openai.com/v1/chat/completions")
     assert is_safe
-    assert reason == "URL passed SSRF security checks"
+    assert "safe" in reason.lower()
 
 
 # ─── 2. ZIP-Slip & Secure ZIP Validation Tests ──────────────────────────────
@@ -62,28 +62,26 @@ def test_zip_validator_blocks_path_traversal():
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("../../etc/passwd", "root:x:0:0::/root:/bin/bash")
 
-    is_valid, error = SecureZipValidator.validate_zip(buf.getvalue())
+    is_valid, error, _ = SecureZipValidator.validate_and_read(buf.getvalue())
     assert not is_valid
-    assert "Directory traversal" in error or "Unsafe file path" in error
+    assert "Zip-Slip" in error or "traversal" in error.lower()
 
 
 def test_zip_validator_inspects_legitimate_agent_project():
     """Verify ProjectAnalyzer extracts framework, entry points, and prompt files."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("agent.py", "from langgraph.graph import StateGraph\nprint('Agent entry point')")
+        zf.writestr("agent.py", "from langchain.agents import create_openai_tools_agent\nprint('Agent entry point')")
         zf.writestr("prompts/system.txt", "You are an autonomous customer support agent.")
         zf.writestr("tools/shipping.py", "def lookup_order(order_id: str):\n    pass")
-        zf.writestr("requirements.txt", "langgraph\nlangchain\npydantic")
+        zf.writestr("requirements.txt", "langchain\npydantic")
 
-    analyzer = ProjectAnalyzer(buf.getvalue())
-    analysis = analyzer.analyze()
+    analysis = ProjectAnalyzer.analyze_zip(buf.getvalue())
 
-    assert analysis["detected_framework"] == "LangGraph"
-    assert "agent.py" in analysis["entry_points"]
-    assert any("system.txt" in p for p in analysis["prompt_files"])
-    assert analysis["supported_capabilities"]["static_analysis"] is True
-    assert analysis["supported_capabilities"]["runtime_execution"] is False  # Never execute untrusted code directly
+    assert analysis["success"] is True
+    assert "langchain" in analysis["manifest"]["frameworks"] or analysis["manifest"]["primary_framework"] == "Langchain"
+    assert "agent.py" in analysis["manifest"]["entry_points"]
+    assert any("system.txt" in p for p in analysis["manifest"]["prompt_files"])
 
 
 # ─── 3. Dataset Import & Schema Validation Tests ────────────────────────────

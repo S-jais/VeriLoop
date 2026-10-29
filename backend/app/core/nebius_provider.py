@@ -17,6 +17,22 @@ settings = get_settings()
 
 T = TypeVar("T", bound=BaseModel)
 
+NEBIUS_MODEL_CANONICAL_MAP = {
+    "nvidia/nemotron-3-nano-30b-a3b": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "nvidia/nemotron-3-ultra-550b-a55b": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "nvidia/nemotron-3-super-120b-a12b": "nvidia/nemotron-3-super-120b-a12b",
+    "nvidia/nemotron-3.5-ultra": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "nvidia/nemotron-3_5-ultra": "nvidia/Nemotron-3-Ultra-550b-a55b",
+}
+
+
+def resolve_nebius_model_id(model_id: Optional[str]) -> str:
+    """Normalize model identifiers to canonical Nebius Token Factory model IDs."""
+    if not model_id:
+        return settings.nebius_primary_model
+    normalized = model_id.lower().strip()
+    return NEBIUS_MODEL_CANONICAL_MAP.get(normalized, model_id)
+
 
 class ModelCallResult:
     """Structured result from a model call."""
@@ -71,8 +87,8 @@ class NebiusTokenFactoryProvider:
 
         # Cap tokens per call
         effective_max_tokens = min(max_tokens, settings.max_tokens_per_call)
-        target_model = model or settings.nebius_primary_model
-        fallback_model = settings.nebius_fast_model
+        target_model = resolve_nebius_model_id(model or settings.nebius_primary_model)
+        fallback_model = resolve_nebius_model_id(settings.nebius_fast_model)
         models_to_try = [target_model]
         if fallback_model != target_model:
             models_to_try.append(fallback_model)

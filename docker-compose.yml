@@ -9,8 +9,11 @@ services:
     environment:
       - NEBIUS_API_KEY=${NEBIUS_API_KEY:-}
       - NEBIUS_API_BASE=${NEBIUS_API_BASE:-https://api.tokenfactory.us-central1.nebius.com/v1}
-      - PRIMARY_MODEL=${PRIMARY_MODEL:-nvidia/Nemotron-3_5-Lightning}
-      - FAST_MODEL=${FAST_MODEL:-nvidia/Nemotron-3_5-Lightning}
+      - PRIMARY_MODEL=${PRIMARY_MODEL:-nvidia/nemotron-3-super-120b-a12b}
+      - PROBE_MODEL=${PROBE_MODEL:-nvidia/nemotron-3-nano-30b-a3b}
+      - DIAGNOSIS_MODEL=${DIAGNOSIS_MODEL:-nvidia/nemotron-3-ultra-550b-a55b}
+      - JUDGE_MODEL=${JUDGE_MODEL:-nvidia/nemotron-3-super-120b-a12b}
+      - FAST_MODEL=${FAST_MODEL:-nvidia/nemotron-3-nano-30b-a3b}
       - TAVILY_API_KEY=${TAVILY_API_KEY:-}
       - DATABASE_URL=sqlite+aiosqlite:////app/data/veriloop.db
     volumes:

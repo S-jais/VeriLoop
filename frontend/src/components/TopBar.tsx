@@ -56,12 +56,14 @@ export function TopBar() {
     setIsRunning(true);
     try {
       if (pathname !== '/dashboard') {
-        router.push('/dashboard');
+        router.push('/dashboard?run=true');
+      } else {
+        window.dispatchEvent(new CustomEvent('veriloop:trigger-run-evaluation'));
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setIsRunning(false);
+      setTimeout(() => setIsRunning(false), 800);
     }
   };
 

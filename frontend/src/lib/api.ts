@@ -68,7 +68,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const primaryUrl = `${API_BASE}${path}`;
-  const timeoutMs = 6000;
+  const timeoutMs = 30000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -97,7 +97,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       try {
         const proxyRes = await fetch(path, {
           headers: { 'Content-Type': 'application/json', ...options?.headers },
-          signal: AbortSignal.timeout(4000),
+          signal: AbortSignal.timeout(15000),
           ...options,
         });
         if (proxyRes.ok) {
@@ -173,10 +173,12 @@ export interface Agent {
 }
 
 export interface ConnectionTestResult {
-  status: 'connected' | 'auth_failed' | 'timeout' | 'unreachable' | 'error';
+  status: 'connected' | 'auth_failed' | 'timeout' | 'unreachable' | 'error' | 'success';
+  connected?: boolean;
   latency_ms: number;
   status_code?: number;
   sanitized_response?: any;
+  response_preview?: string;
   message: string;
 }
 
@@ -316,7 +318,7 @@ function runMockEvaluationStream(
         provider: ev.provider,
         timestamp: ev.timestamp,
         is_live: false,
-        reliability_score: ev.stage === 'completed' ? 87 : 64,
+        reliability_score: ev.stage === 'completed' ? 87 : 78,
         total_tests: 100,
         passed_tests: ev.stage === 'completed' ? 98 : 95,
         failed_tests: ev.stage === 'completed' ? 2 : 5,
@@ -351,14 +353,13 @@ export function startEvaluation(
   let fallbackCleanup: (() => void) | null = null;
 
   (async () => {
-    // Map canonical agent and version identifiers to backend database records
     const targetAgentId =
       !agentId || agentId === 'agent-cs-01' || agentId === 'demo-customer-support-agent-v1'
-        ? 'demo-customer-support-agent-v1'
+        ? undefined
         : agentId;
     const targetVersionId =
       !versionId || versionId === 'v1.0' || versionId.includes('baseline') || versionId === 'demo-agent-baseline-v1'
-        ? 'demo-agent-baseline-v1'
+        ? undefined
         : versionId;
 
     try {
@@ -738,7 +739,7 @@ export const api = {
           agent_version_id: 'v1.0',
           suite_id: 'suite-baseline-100',
           status: 'COMPLETED',
-          reliability_score: 0.64,
+          reliability_score: 0.78,
           total_tests: 100,
           passed_tests: 95,
           failed_tests: 5,
@@ -760,7 +761,7 @@ export const api = {
           agent_version_id: 'demo-agent-baseline-v1',
           suite_id: 'suite-baseline-100',
           status: 'COMPLETED',
-          reliability_score: 0.64,
+          reliability_score: 0.78,
           total_tests: 100,
           passed_tests: 95,
           failed_tests: 5,
@@ -779,7 +780,7 @@ export const api = {
           agent_version_id: 'demo-agent-baseline-v1',
           suite_id: 'suite-baseline-100',
           status: 'COMPLETED',
-          reliability_score: 0.64,
+          reliability_score: 0.78,
           total_tests: 100,
           passed_tests: 95,
           failed_tests: 5,
@@ -901,7 +902,7 @@ export const api = {
           agent_id: 'agent-cs-01',
           agent_version_id: 'v1.0',
           status: 'COMPLETED',
-          reliability_score: 0.64,
+          reliability_score: 0.78,
           total_tests: 100,
           passed_tests: 95,
           failed_tests: 5,
@@ -924,7 +925,7 @@ export const api = {
           agent_id: 'demo-customer-support-agent-v1',
           agent_version_id: 'demo-agent-baseline-v1',
           status: 'COMPLETED',
-          reliability_score: 0.64,
+          reliability_score: 0.78,
           total_tests: 100,
           passed_tests: 95,
           failed_tests: 5,

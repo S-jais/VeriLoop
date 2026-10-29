@@ -75,7 +75,7 @@ class EvaluationOrchestrator:
                 test_cases, model_used, is_live = await self.test_gen.generate_tests(
                     agent_name=agent.name,
                     agent_description=agent.description or "",
-                    count=20,
+                    count=10,
                 )
                 test_cases_with_splits = self.test_gen.assign_splits(test_cases)
 

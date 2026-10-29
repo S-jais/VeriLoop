@@ -63,8 +63,10 @@ export default function AgentsPage() {
       <div className="g g2" style={{ gap: '16px' }}>
         {agents.map((ag) => {
           const isDemo = ag.is_demo || ag.id.includes('demo');
-          const relScore = ag.reliability_score ? Math.round(ag.reliability_score <= 1.0 ? ag.reliability_score * 100 : ag.reliability_score) : 64;
-          const isVerified = relScore >= 80 && (ag.critical_failures ?? 0) === 0;
+          const score = ag.reliability_score;
+          const hasScore = score !== undefined && score !== null;
+          const relScore = hasScore ? Math.round(score <= 1.0 ? score * 100 : score) : null;
+          const isVerified = hasScore && relScore !== null && relScore >= 80 && (ag.critical_failures ?? 0) === 0;
 
           return (
             <div key={ag.id} className="card g" style={{ gap: '14px', background: 'var(--s1)' }}>
@@ -78,8 +80,8 @@ export default function AgentsPage() {
                     ID: {ag.id} · {ag.connection_type?.toUpperCase() || (isDemo ? 'DEMO' : 'API')}
                   </span>
                 </div>
-                <span className={`bd ${isVerified ? 'ok' : 'er'}`}>
-                  <i></i>{isVerified ? 'VERIFIED' : 'NEEDS ATTENTION'}
+                <span className={`bd ${hasScore ? (isVerified ? 'ok' : 'er') : 'in'}`}>
+                  <i></i>{hasScore ? (isVerified ? 'VERIFIED' : 'NEEDS ATTENTION') : 'UNTESTED'}
                 </span>
               </div>
 
@@ -101,14 +103,14 @@ export default function AgentsPage() {
                 <div>
                   <span className="lbl">Reliability Index</span>
                   <br />
-                  <b className={isVerified ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}>
-                    {relScore}% / 100
+                  <b className={hasScore ? (isVerified ? 'text-[var(--gr)]' : 'text-[var(--rd)]') : 'mu'}>
+                    {hasScore ? `${relScore}% / 100` : '— (Untested)'}
                   </b>
                 </div>
                 <div>
                   <span className="lbl">Audit Status</span>
                   <br />
-                  <b>{ag.last_evaluation_status?.toUpperCase() || 'COMPLETED'}</b>
+                  <b>{ag.last_evaluation_status?.toUpperCase() || (hasScore ? 'COMPLETED' : 'NOT EVALUATED')}</b>
                 </div>
               </div>
 

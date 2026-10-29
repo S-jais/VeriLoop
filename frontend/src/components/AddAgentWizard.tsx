@@ -435,7 +435,7 @@ export default function AddAgentWizard({ isOpen, onClose, onAgentAdded }: AddAge
                   </select>
                   <input
                     type="url"
-                    placeholder="https://api.yourcompany.com/agent/chat"
+                    placeholder="https://api.yourcompany.com/agent/chat (or https://httpbin.org/post for testing)"
                     value={endpointUrl}
                     onChange={(e) => setEndpointUrl(e.target.value)}
                     style={{
@@ -450,6 +450,24 @@ export default function AddAgentWizard({ isOpen, onClose, onAgentAdded }: AddAge
                     }}
                   />
                 </div>
+
+                {['chatgpt.com', 'claude.ai', 'gemini.google.com'].some((d) => endpointUrl.toLowerCase().includes(d)) && (
+                  <div
+                    style={{
+                      padding: '8px 12px',
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid var(--am)',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: 'var(--am)',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    ⚠️ <b>Web UI URL Detected:</b> '{endpointUrl}' is a browser user interface, not a programmatic API.
+                    Web interfaces block automated agent requests with Cloudflare HTTP 403.
+                    For OpenAI/ChatGPT models, use <code>https://api.openai.com/v1/chat/completions</code> with your API key, or test with webhook <code>https://httpbin.org/post</code>.
+                  </div>
+                )}
 
                 <div className="g g2" style={{ gap: '10px' }}>
                   <div>
@@ -566,39 +584,47 @@ export default function AddAgentWizard({ isOpen, onClose, onAgentAdded }: AddAge
                 </div>
 
                 {/* Test Result Display */}
-                {testResult && (
-                  <div
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      background: testResult.status === 'connected' ? 'rgba(52, 211, 153, 0.08)' : 'rgba(248, 113, 113, 0.08)',
-                      border: testResult.status === 'connected' ? '1px solid var(--gr)' : '1px solid var(--rd)',
-                    }}
-                  >
-                    <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="mono font-bold" style={{ color: testResult.status === 'connected' ? 'var(--gr)' : 'var(--rd)' }}>
-                        {testResult.status.toUpperCase()} ({testResult.latency_ms}ms)
-                      </span>
-                      {testResult.status_code && <span className="mono mu">HTTP {testResult.status_code}</span>}
+                {testResult && (() => {
+                  const isConn = testResult.connected || testResult.status === 'connected' || testResult.status === 'success';
+                  return (
+                    <div
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        background: isConn ? 'rgba(52, 211, 153, 0.08)' : 'rgba(248, 113, 113, 0.08)',
+                        border: isConn ? '1px solid var(--gr)' : '1px solid var(--rd)',
+                      }}
+                    >
+                      <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="mono font-bold" style={{ color: isConn ? 'var(--gr)' : 'var(--rd)' }}>
+                          {isConn ? 'CONNECTED' : 'FAILED'} ({testResult.latency_ms}ms)
+                        </span>
+                        {testResult.status_code && <span className="mono mu">HTTP {testResult.status_code}</span>}
+                      </div>
+                      <div style={{ marginTop: '4px', color: 'var(--tx)', wordBreak: 'break-word' }}>{testResult.message}</div>
+                      {(testResult.sanitized_response || testResult.response_preview) && (
+                        <pre
+                          style={{
+                            margin: '6px 0 0 0',
+                            padding: '6px',
+                            background: 'rgba(0,0,0,0.3)',
+                            borderRadius: '3px',
+                            fontSize: '11px',
+                            overflowX: 'auto',
+                            maxHeight: '120px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                          }}
+                        >
+                          {typeof (testResult.sanitized_response || testResult.response_preview) === 'string'
+                            ? (testResult.sanitized_response || testResult.response_preview)
+                            : JSON.stringify(testResult.sanitized_response || testResult.response_preview, null, 2)}
+                        </pre>
+                      )}
                     </div>
-                    <div style={{ marginTop: '4px', color: 'var(--tx)' }}>{testResult.message}</div>
-                    {testResult.sanitized_response && (
-                      <pre
-                        style={{
-                          margin: '6px 0 0 0',
-                          padding: '6px',
-                          background: 'rgba(0,0,0,0.3)',
-                          borderRadius: '3px',
-                          fontSize: '11px',
-                          overflowX: 'auto',
-                        }}
-                      >
-                        {JSON.stringify(testResult.sanitized_response, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 

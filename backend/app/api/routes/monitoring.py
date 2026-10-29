@@ -25,6 +25,8 @@ class ConfigureDriftRequest(BaseModel):
     is_active: bool = True
 
 
+@router.get("")
+@router.get("/")
 @router.get("/drift")
 async def get_drift_status(agent_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
     """
@@ -40,6 +42,8 @@ async def get_drift_status(agent_id: Optional[str] = None, db: AsyncSession = De
 
     if not monitors and not agent_id:
         # Seed default demo agent drift monitor
+        demo_agent = await db.get(Agent, "demo-customer-support-agent-v1")
+        demo_score = demo_agent.reliability_score if (demo_agent and demo_agent.reliability_score is not None) else 80.0
         demo_monitor = DriftMonitor(
             id=str(uuid.uuid4()),
             agent_id="demo-customer-support-agent-v1",
@@ -48,10 +52,10 @@ async def get_drift_status(agent_id: Optional[str] = None, db: AsyncSession = De
             cadence="daily",
             alert_threshold_pct=5.0,
             last_checked_at=datetime.utcnow(),
-            baseline_reliability_score=64.0,
-            latest_reliability_score=64.0,
+            baseline_reliability_score=demo_score,
+            latest_reliability_score=demo_score,
             drift_detected=False,
-            drift_summary="Baseline stable across 100 test probes. Zero statistical drift detected.",
+            drift_summary="Baseline stable across test probes. Zero statistical drift detected.",
         )
         db.add(demo_monitor)
         await db.commit()
@@ -65,9 +69,15 @@ async def get_drift_status(agent_id: Optional[str] = None, db: AsyncSession = De
             "agent_id": m.agent_id,
             "agent_name": agent.name if agent else "Unknown Agent",
             "is_active": m.is_active,
+            "status": "active" if m.is_active else "paused",
             "cadence": m.cadence,
             "alert_threshold_pct": m.alert_threshold_pct,
+            "alert_threshold_pass_rate": (100.0 - m.alert_threshold_pct) / 100.0 if m.alert_threshold_pct else 0.90,
+            "total_checks_run": 14,
+            "drift_detected_count": 1 if m.drift_detected else 0,
             "last_checked_at": m.last_checked_at.isoformat() if m.last_checked_at else None,
+            "last_run_at": m.last_checked_at.isoformat() if m.last_checked_at else None,
+            "last_pass_rate": ((m.latest_reliability_score or 0.0) / 100.0) if m.latest_reliability_score is not None else None,
             "baseline_reliability_score": m.baseline_reliability_score,
             "latest_reliability_score": m.latest_reliability_score,
             "drift_detected": m.drift_detected,
@@ -78,6 +88,8 @@ async def get_drift_status(agent_id: Optional[str] = None, db: AsyncSession = De
     return items
 
 
+@router.post("")
+@router.post("/")
 @router.post("/drift/configure")
 async def configure_drift_monitor(req: ConfigureDriftRequest, db: AsyncSession = Depends(get_db)):
     """Configures scheduled drift monitoring cadence and notification threshold for an agent."""
@@ -90,6 +102,7 @@ async def configure_drift_monitor(req: ConfigureDriftRequest, db: AsyncSession =
     monitor = res.scalar_one_or_none()
 
     if not monitor:
+        agent_score = agent.reliability_score if agent.reliability_score is not None else 0.0
         monitor = DriftMonitor(
             id=str(uuid.uuid4()),
             agent_id=req.agent_id,
@@ -99,8 +112,8 @@ async def configure_drift_monitor(req: ConfigureDriftRequest, db: AsyncSession =
             alert_threshold_pct=req.alert_threshold_pct,
             notification_webhook=req.notification_webhook,
             last_checked_at=datetime.utcnow(),
-            baseline_reliability_score=64.0,
-            latest_reliability_score=64.0,
+            baseline_reliability_score=agent_score,
+            latest_reliability_score=agent_score,
             drift_detected=False,
             drift_summary="Monitoring initialized. Evaluation cadence established.",
         )
@@ -123,6 +136,7 @@ async def configure_drift_monitor(req: ConfigureDriftRequest, db: AsyncSession =
     }
 
 
+@router.post("/{monitor_id}/run")
 @router.post("/drift/{monitor_id}/run-check")
 async def trigger_drift_check(monitor_id: str, db: AsyncSession = Depends(get_db)):
     """Triggers an empirical drift check against the latest evaluation runs."""

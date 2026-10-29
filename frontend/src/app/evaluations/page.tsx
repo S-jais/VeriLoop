@@ -16,6 +16,17 @@ const FIVE_STEPS = [
   { id: 'Prove', label: '5. Prove', desc: 'Holdout certification & regression gate' },
 ];
 
+function normalizeStage(stage?: string): string {
+  if (!stage) return 'Test';
+  const s = stage.toLowerCase();
+  if (s.includes('test') || s.includes('generating_tests') || s.includes('running_tests')) return 'Test';
+  if (s.includes('fail') || s.includes('diagnos') || s.includes('evidence') || s.includes('research')) return 'Diagnose';
+  if (s.includes('interven')) return 'Intervene';
+  if (s.includes('validat')) return 'Validate';
+  if (s.includes('prov') || s.includes('complete')) return 'Prove';
+  return stage;
+}
+
 export default function EvaluationsPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>('');
@@ -60,12 +71,7 @@ export default function EvaluationsPage() {
       (event) => {
         setLogEvents((prev) => [...prev, event]);
         if (event.stage) {
-          const matched = FIVE_STEPS.find(
-            (s) => s.id.toLowerCase() === event.stage.toLowerCase()
-          );
-          if (matched) {
-            setCurrentStep(matched.id);
-          }
+          setCurrentStep(normalizeStage(event.stage));
         }
       },
       () => {
@@ -284,9 +290,10 @@ export default function EvaluationsPage() {
               </thead>
               <tbody>
                 {evaluations.map((ev) => {
-                  const rawScore = ev.reliability_score ?? 64.0;
+                  const hasScore = ev.reliability_score !== undefined && ev.reliability_score !== null;
+                  const rawScore = ev.reliability_score ?? 0;
                   const rel = rawScore <= 1.0 ? Math.round(rawScore * 100) : Math.round(rawScore);
-                  const isPassed = rel >= 70 && (ev.critical_failures ?? 0) === 0;
+                  const isPassed = hasScore && rel >= 70 && (ev.critical_failures ?? 0) === 0;
                   const isSeeded = ev.id === 'eval-seeded-baseline-run';
 
                   return (
@@ -296,13 +303,13 @@ export default function EvaluationsPage() {
                           className="mono font-bold"
                           style={{
                             fontSize: '17px',
-                            color: isPassed ? 'var(--gr)' : 'var(--rd)',
+                            color: hasScore ? (isPassed ? 'var(--gr)' : 'var(--rd)') : 'var(--tx-mu)',
                           }}
                         >
-                          {rel}%
+                          {hasScore ? `${rel}%` : '—'}
                         </span>
                         <div className="mono mu" style={{ fontSize: '10px' }}>
-                          {isPassed ? 'MEETS CRITERIA' : 'DEFECTS DETECTED'}
+                          {hasScore ? (isPassed ? 'MEETS CRITERIA' : 'DEFECTS DETECTED') : 'NOT SCORED'}
                         </div>
                       </td>
                       <td>

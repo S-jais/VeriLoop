@@ -195,7 +195,7 @@ The backend is built with FastAPI in `backend/app`. All registered routes and th
 With this audit established, the remediation steps will proceed strictly according to Phase 1 through Phase 7:
 - **Phase 1**: Define canonical `EvaluationRun` data contract and selectors. Unify all mathematical invariants.
 - **Phase 2**: Real streaming, honest data labeling (`Live` vs `Sample run`), persistent run history, endpoint coverage, loading/error states.
-- **Phase 3**: Unified model configuration (`config/models.ts` & backend) with verified Nebius Token Factory model IDs (`nvidia/Nemotron-3_5-Lightning`).
+- **Phase 3**: Unified model configuration (`config/models.ts` & backend) with verified Nebius Token Factory specialized Nemotron 3 model IDs (`nvidia/nemotron-3-nano-30b-a3b`, `nvidia/nemotron-3-ultra-550b-a55b`, `nvidia/nemotron-3-super-120b-a12b`).
 - **Phase 4**: Tavily grounding cards, working search inputs, prompt injection defenses.
 - **Phase 5**: Verification dimension alignment, exact regression firewall cases, report exports.
 - **Phase 6**: Landing page hero stats wiring, why AI agents fail descriptions, footer strips, accessibility cleanup (`.sr-only`), security headers.

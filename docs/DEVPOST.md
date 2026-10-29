@@ -41,7 +41,10 @@ VeriLoop is architected around substantive integrations with leading AI infrastr
 - **Resilience**: Features built-in deterministic fallback mechanisms, ensuring zero crashes or broken UI states during network partitions or offline judging demos.
 
 ### 2. NVIDIA Open-Source Models
-- **Pipeline Models**: `nvidia/Nemotron-3_5-Lightning` (Probe, Diagnosis, Judge, Fast jobs)
+- **Pipeline Models**: Specialized Nemotron 3 architecture
+  - `nvidia/nemotron-3-nano-30b-a3b` for high-throughput probe generation and candidate drafting.
+  - `nvidia/nemotron-3-ultra-550b-a55b` for causal root cause diagnosis.
+  - `nvidia/nemotron-3-super-120b-a12b` for verification judging, holdout evaluation, and regression arbitration.
   - Utilized for high-complexity cognitive tasks: adversarial test vector generation, causal graph extraction, and regression firewall arbitration.
 
 ### 3. Nebius AI Cloud Infrastructure
@@ -56,7 +59,7 @@ VeriLoop is architected around substantive integrations with leading AI infrastr
 ## 💻 Tech Stack
 - **Frontend**: Next.js 16 (App Router + Turbopack), React 19, TypeScript, Tailwind CSS, Recharts (6-dimension radar charts), Radix UI, Lucide Icons.
 - **Backend**: Python 3.11, FastAPI, Pydantic v2, SQLAlchemy (Async), aiosqlite (WAL mode for concurrent evaluation).
-- **Inference & Search**: Nebius Token Factory API, NVIDIA Llama 3.1 Nemotron / 8B, Tavily AI Search.
+- **Inference & Search**: Nebius Token Factory API, NVIDIA Nemotron 3 Models (Nano 30B, Super 120B, Ultra 550B), Tavily AI Search.
 - **DevOps**: Docker, Docker Compose, PowerShell / Bash cross-platform automation.
 
 ---

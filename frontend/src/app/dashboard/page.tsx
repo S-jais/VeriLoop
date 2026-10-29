@@ -21,6 +21,17 @@ const TAXONOMY_CATEGORIES = [
 
 const STAGES = ['Test', 'Diagnose', 'Intervene', 'Validate', 'Prove'];
 
+function normalizeStage(stage?: string): string {
+  if (!stage) return 'Test';
+  const s = stage.toLowerCase();
+  if (s.includes('test') || s.includes('generating_tests') || s.includes('running_tests')) return 'Test';
+  if (s.includes('fail') || s.includes('diagnos') || s.includes('evidence') || s.includes('research')) return 'Diagnose';
+  if (s.includes('interven')) return 'Intervene';
+  if (s.includes('validat')) return 'Validate';
+  if (s.includes('prov') || s.includes('complete')) return 'Prove';
+  return stage;
+}
+
 export default function DashboardPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -36,14 +47,9 @@ export default function DashboardPage() {
     staleTime: 10000,
   });
 
-  useEffect(() => {
-    const handler = () => refetch();
-    window.addEventListener('veriloop:evaluation-completed', handler);
-    return () => window.removeEventListener('veriloop:evaluation-completed', handler);
-  }, [refetch]);
-
   const metrics = dashboard?.metrics;
-  const reliability = metrics?.reliabilityScore ?? 64;
+  const hasEvaluated = Boolean(metrics && metrics.totalCount > 0);
+  const reliability = hasEvaluated ? (metrics?.reliabilityScore ?? 0) : 0;
   const failures = dashboard?.recentFailures || [];
 
   function handleRunEvaluation() {
@@ -53,15 +59,17 @@ export default function DashboardPage() {
     setCurrentStageName('Test');
 
     const stop = api.startEvaluation(
-      dashboard?.agent.id || 'agent-cs-01',
-      dashboard?.agent.version || 'v1.0',
+      dashboard?.agent.id || undefined,
+      dashboard?.agent.version || undefined,
       (event) => {
         setProgressEvents((prev) => [...prev, event]);
-        setCurrentStageName(event.stage);
+        setCurrentStageName(normalizeStage(event.stage));
         setCurrentProgressPct(event.progress ?? 0);
       },
       () => {
         setIsRunning(false);
+        setCurrentProgressPct(100);
+        setCurrentStageName('Prove');
         refetch();
       },
       (err) => {
@@ -71,17 +79,41 @@ export default function DashboardPage() {
     );
   }
 
-  const agentStatus =
-    metrics && metrics.criticalFailures === 0
-      ? 'VERIFIED'
-      : 'NEEDS ATTENTION';
+  useEffect(() => {
+    const handler = () => refetch();
+    window.addEventListener('veriloop:evaluation-completed', handler);
+
+    const triggerHandler = () => {
+      handleRunEvaluation();
+    };
+    window.addEventListener('veriloop:trigger-run-evaluation', triggerHandler);
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('run') === 'true') {
+        window.history.replaceState({}, '', '/dashboard');
+        handleRunEvaluation();
+      }
+    }
+
+    return () => {
+      window.removeEventListener('veriloop:evaluation-completed', handler);
+      window.removeEventListener('veriloop:trigger-run-evaluation', triggerHandler);
+    };
+  }, [refetch, dashboard?.agent.id, dashboard?.agent.version]);
+
+  const agentStatus = !hasEvaluated
+    ? 'READY FOR EVALUATION'
+    : metrics?.criticalFailures === 0 && reliability >= 80
+    ? 'VERIFIED'
+    : 'NEEDS ATTENTION';
 
   return (
     <div className="space-y-6 animate-fade-in text-[var(--tx)] w-full min-w-0">
       {/* Header Section */}
       <div style={{ paddingBottom: '24px', borderBottom: '1px solid var(--ln)' }}>
         <div className="fl" style={{ gap: '10px', alignItems: 'center' }}>
-          <span className={`bd ${metrics?.criticalFailures === 0 ? 'ok' : 'er'}`}>
+          <span className={`bd ${!hasEvaluated ? 'in' : (metrics?.criticalFailures === 0 && reliability >= 80) ? 'ok' : 'er'}`}>
             <i></i>
             {agentStatus}
           </span>
@@ -229,19 +261,21 @@ export default function DashboardPage() {
           <div className="lbl">VeriLoop reliability score</div>
           <div className="fl" style={{ margin: '8px 0', flexWrap: 'wrap', gap: '8px', alignItems: 'baseline' }}>
             <span
-              className={`big ${reliability >= 80 ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}`}
+              className={`big ${!hasEvaluated ? 'mu' : reliability >= 80 ? 'text-[var(--gr)]' : 'text-[var(--rd)]'}`}
               style={{ fontSize: 'clamp(32px, 6vw, 48px)' }}
             >
-              {reliability}%
+              {hasEvaluated ? `${reliability}%` : '—'}
             </span>
-            <span className="mu" style={{ fontSize: '15px' }}>/100</span>
-            <span className={`bd ${reliability >= 80 ? 'ok' : 'er'}`}>
+            {hasEvaluated && <span className="mu" style={{ fontSize: '15px' }}>/100</span>}
+            <span className={`bd ${!hasEvaluated ? 'in' : reliability >= 80 ? 'ok' : 'er'}`}>
               <i></i>
-              {reliability >= 80 ? 'PASS' : 'FAIL'}
+              {!hasEvaluated ? 'UNTESTED' : reliability >= 80 ? 'PASS' : 'FAIL'}
             </span>
           </div>
           <p className="mu" style={{ fontSize: '12px', lineHeight: 1.5 }}>
-            Enterprise severity-weighted index: 100 − (12×critical + 4×high). Penalized by 2 Critical and 3 High flaws. Target threshold: ≥80%.
+            {hasEvaluated
+              ? `Enterprise severity-weighted index: 100 − (12×critical + 4×high). Penalized by ${metrics?.criticalFailures || 0} Critical and ${metrics?.highFailures || 0} High flaws. Target threshold: ≥80%.`
+              : 'Enterprise severity-weighted index: 100 − (12×critical + 4×high). Connect an AI agent and run an evaluation to measure reliability across 60/20/20 splits.'}
           </p>
         </div>
 
@@ -252,7 +286,7 @@ export default function DashboardPage() {
               className={`big ${metrics?.criticalFailures ? 'text-[var(--rd)]' : 'mu'}`}
               style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}
             >
-              {metrics ? metrics.criticalFailures : 2}
+              {hasEvaluated ? (metrics?.criticalFailures ?? 0) : 0}
             </div>
             <span className="mu" style={{ fontSize: '11px' }}>Policy & Safety breaches (0 allowed)</span>
           </div>
@@ -262,16 +296,18 @@ export default function DashboardPage() {
               className={`big ${metrics?.highFailures ? 'text-[var(--or)]' : 'mu'}`}
               style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}
             >
-              {metrics ? metrics.highFailures : 3}
+              {hasEvaluated ? (metrics?.highFailures ?? 0) : 0}
             </div>
             <span className="mu" style={{ fontSize: '11px' }}>Retrieval, Tool & Context flaws</span>
           </div>
           <div>
             <div className="lbl">Pass rate</div>
             <div className="big text-[var(--cy)]" style={{ fontSize: 'clamp(22px, 4vw, 28px)' }}>
-              {metrics ? metrics.passRate : '95/100'}
+              {hasEvaluated ? (metrics?.passRate || '0/0') : '0/0'}
             </div>
-            <span className="mu" style={{ fontSize: '11px' }}>95 passed / 100 total (95%)</span>
+            <span className="mu" style={{ fontSize: '11px' }}>
+              {hasEvaluated ? `${metrics?.passedCount || 0} passed / ${metrics?.totalCount || 0} total` : '0 passed / 0 total'}
+            </span>
           </div>
           <div>
             <div className="lbl">Regressions</div>
@@ -439,37 +475,43 @@ export default function DashboardPage() {
               <span>Root cause</span>
               <span>Action</span>
             </div>
-            {failures.map((f) => (
-              <div key={f.id} className="row">
-                <span className="mono" style={{ fontSize: '11.5px' }}>
-                  {f.id}
-                </span>
-                <span style={{ fontWeight: 500 }}>
-                  {f.scenario}
-                </span>
-                <span className="mono" style={{ fontSize: '11px', color: 'var(--cy)' }}>
-                  {f.taxonomy_category || f.type || (f as any).category}
-                </span>
-                <span
-                  className={
-                    f.severity === 'CRITICAL'
-                      ? 'er'
-                      : f.severity === 'HIGH'
-                      ? 'or'
-                      : 'wn'
-                  }
-                  style={{ fontWeight: 600, fontSize: '11.5px' }}
-                >
-                  {f.severity}
-                </span>
-                <span className="mu truncate" style={{ fontSize: '12.5px' }} title={f.root_cause || (f as any).rootCause}>
-                  {f.root_cause || (f as any).rootCause}
-                </span>
-                <Link className="btn sm" href={`/failures?id=${f.id}`}>
-                  Investigate →
-                </Link>
+            {failures.length === 0 ? (
+              <div style={{ padding: '32px 18px', textAlign: 'center' }} className="mu">
+                <span>No failures detected. Connect an agent and run an evaluation to analyze real vulnerabilities.</span>
               </div>
-            ))}
+            ) : (
+              failures.map((f) => (
+                <div key={f.id} className="row">
+                  <span className="mono" style={{ fontSize: '11.5px' }}>
+                    {f.id}
+                  </span>
+                  <span style={{ fontWeight: 500 }}>
+                    {f.scenario}
+                  </span>
+                  <span className="mono" style={{ fontSize: '11px', color: 'var(--cy)' }}>
+                    {f.taxonomy_category || f.type || (f as any).category}
+                  </span>
+                  <span
+                    className={
+                      f.severity === 'CRITICAL'
+                        ? 'er'
+                        : f.severity === 'HIGH'
+                        ? 'or'
+                        : 'wn'
+                    }
+                    style={{ fontWeight: 600, fontSize: '11.5px' }}
+                  >
+                    {f.severity}
+                  </span>
+                  <span className="mu truncate" style={{ fontSize: '12.5px' }} title={f.root_cause || (f as any).rootCause}>
+                    {f.root_cause || (f as any).rootCause}
+                  </span>
+                  <Link className="btn sm" href={`/failures?id=${f.id}`}>
+                    Investigate →
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

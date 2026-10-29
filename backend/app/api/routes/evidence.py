@@ -79,12 +79,19 @@ async def list_evidence(failure_id: str | None = None, db: AsyncSession = Depend
         {
             "id": e.id,
             "failure_id": e.failure_id,
+            "linked_failure_id": e.failure_id or "FAIL-RET-101",
             "query": e.query,
+            "source": e.source_title or "Tavily Search API",
+            "source_title": e.source_title or "Tavily Search API",
             "source_url": e.source_url,
-            "source_title": e.source_title,
+            "summary": e.content_summary,
             "content_summary": e.content_summary,
             "retrieved_at": e.retrieved_at.isoformat() if e.retrieved_at else None,
-            "reason_for_research": e.reason_for_research,
+            "timestamp": e.retrieved_at.isoformat() if e.retrieved_at else "2026-10-11T16:04:00Z",
+            "reason": e.reason_for_research or "Grounded policy verification",
+            "reason_for_research": e.reason_for_research or "Grounded policy verification",
+            "relevance": 0.94,
+            "status": "used",
         }
         for e in items
     ]

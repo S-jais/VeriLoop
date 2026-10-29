@@ -112,7 +112,7 @@ class InterventionPlannerService:
             output, result = await self._provider.generate_structured(
                 messages=messages,
                 schema_class=InterventionPlanOutput,
-                model=settings.nebius_primary_model,
+                model=settings.probe_model,  # Use nano-30b model for candidate drafting
                 task_label="intervention_planning",
                 temperature=0.3,
             )

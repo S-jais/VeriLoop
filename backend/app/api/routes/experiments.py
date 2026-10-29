@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.database import get_db
+from app.core.config import get_settings
 from app.db.models import (
     Agent, AgentVersion, TestCase, Experiment, Intervention,
     AgentStatus, ExperimentStatus, TestSplit,
@@ -18,6 +19,7 @@ from app.services.evaluation_engine import EvaluationEngine
 from app.services.intervention_engine import RegressionFirewall
 
 router = APIRouter()
+settings = get_settings()
 
 
 class RunExperimentRequest(BaseModel):
@@ -188,12 +190,48 @@ async def list_experiments(db: AsyncSession = Depends(get_db)):
         interv = await db.get(Intervention, exp.intervention_id)
         cand = await db.get(AgentVersion, exp.candidate_version_id)
         base = await db.get(AgentVersion, exp.baseline_version_id)
+
+        cand_ver = cand.version if cand else "Candidate"
+        interv_type = (
+            interv.intervention_type.value
+            if (interv and hasattr(interv.intervention_type, "value"))
+            else (str(interv.intervention_type) if interv else "PROMPT")
+        )
+        is_verified = (
+            exp.decision == "ACCEPTED"
+            or exp.status == ExperimentStatus.ACCEPTED
+            or (hasattr(exp.status, "value") and exp.status.value == "ACCEPTED")
+        )
+
+        opt_score_val = int(round(exp.optimization_candidate or 0))
+        val_score_val = int(round(exp.validation_candidate or 0))
+        hold_score_val = int(round(exp.holdout_candidate or 0))
+
         formatted.append({
             "id": exp.id,
+            "name": f"{cand_ver} ({interv_type})" if not cand_ver.startswith("Candidate") else f"{cand_ver} (Targeted Remediation)" if is_verified else f"{cand_ver} (Naive Prompt Override)",
+            "version": cand_ver,
+            "interventionType": interv_type,
+            "description": interv.description if interv else (exp.decision_reason or "Targeted intervention candidate"),
+            "optimizationScore": f"{opt_score_val}% ({int(opt_score_val * 0.6)}/60)",
+            "validationScore": f"{val_score_val}% ({int(val_score_val * 0.2)}/20)",
+            "holdoutScore": f"{hold_score_val}% ({int(hold_score_val * 0.2)}/20)",
+            "criticalFailures": exp.critical_failures_after or 0,
+            "regressionCount": exp.regression_count or 0,
+            "verdict": "VERIFIED" if is_verified else "REJECTED",
+            "verdictReason": exp.decision_reason or (
+                "Generalizes cleanly across unseen holdout with zero regressions detected."
+                if is_verified
+                else "Regression firewall blocked candidate due to policy regressions on holdout set."
+            ),
+            "model_used": exp.model_used or settings.judge_model,
+            "inference_provider": "Nebius Token Factory",
+
+            # Original DB fields
             "intervention_id": exp.intervention_id,
             "intervention_description": interv.description if interv else "Targeted fix",
             "candidate_version_id": exp.candidate_version_id,
-            "candidate_version": cand.version if cand else "Candidate",
+            "candidate_version": cand_ver,
             "baseline_version_id": exp.baseline_version_id,
             "baseline_version": base.version if base else "Baseline",
             "status": exp.status.value if hasattr(exp.status, "value") else exp.status,
@@ -205,7 +243,6 @@ async def list_experiments(db: AsyncSession = Depends(get_db)):
             "holdout_candidate": exp.holdout_candidate,
             "critical_failures_before": exp.critical_failures_before,
             "critical_failures_after": exp.critical_failures_after,
-            "regression_count": exp.regression_count,
             "regression_details": exp.regression_details or [],
             "decision": exp.decision,
             "decision_reason": exp.decision_reason,

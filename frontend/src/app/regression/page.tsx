@@ -24,8 +24,8 @@ export default function RegressionFirewallPage() {
     queryFn: api.listExperiments,
   });
 
-  const candidateB = experiments.find((e) => e.id === 'CANDIDATE-B') || experiments[0];
-  const candidateA = experiments.find((e) => e.id === 'CANDIDATE-A') || experiments[1];
+  const candidateB = experiments.find((e) => e.id === 'CANDIDATE-B' || e.id === 'exp-candidate-b' || (e.version && e.version.toLowerCase().includes('b')) || e.verdict === 'VERIFIED') || experiments[0];
+  const candidateA = experiments.find((e) => e.id === 'CANDIDATE-A' || e.id === 'exp-candidate-a' || (e.version && e.version.toLowerCase().includes('a')) || e.verdict === 'REJECTED') || experiments[1];
 
   const handleRunCheck = () => {
     setChecking(true);
@@ -61,7 +61,7 @@ export default function RegressionFirewallPage() {
           <div className="lbl text-[var(--rd)]">Current baseline version</div>
           <h3 style={{ marginTop: '4px' }}>Baseline v1.0</h3>
           <span className="mono mu" style={{ fontSize: '12px' }}>
-            {CANONICAL_AGENT.name} · Flawed baseline (64% reliability, 5 failures)
+            {CANONICAL_AGENT.name} · Baseline version (policy retrieval flaws, 5 failures)
           </span>
         </div>
 

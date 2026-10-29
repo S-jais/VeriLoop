@@ -137,7 +137,7 @@ class FailureAnalyzerService:
             analysis, result = await self._provider.generate_structured(
                 messages=messages,
                 schema_class=FailureAnalysisOutput,
-                model=settings.nebius_primary_model,  # Use primary model for deep analysis
+                model=settings.diagnosis_model,  # Use 550B diagnosis model for deep root-cause analysis
                 task_label="failure_analysis",
                 temperature=0.2,
                 max_tokens=1024,

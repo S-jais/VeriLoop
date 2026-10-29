@@ -20,7 +20,7 @@ This document verifies the completeness, engineering rigor, and submission readi
 ### 2. Infrastructure & Model Integration
 - [x] **Nebius Token Factory Integration**: OpenAI-compatible client configured to `https://api.tokenfactory.us-central1.nebius.com/v1` with proper bearer auth.
 - [x] **Substantive Nebius Utilization**: Powers multi-turn test generation, candidate agent simulation, and evaluation scoring.
-- [x] **NVIDIA Open-Source Models**: Full pipeline (Probe, Diagnosis, Judge, Fast jobs) driven by `nvidia/Nemotron-3_5-Lightning`.
+- [x] **NVIDIA Open-Source Models**: Specialized Nemotron 3 architecture: `nvidia/nemotron-3-nano-30b-a3b` (Probe synthesis & candidate drafting), `nvidia/nemotron-3-ultra-550b-a55b` (Causal failure diagnosis), and `nvidia/nemotron-3-super-120b-a12b` (Verification judge & certification).
 - [x] **Nebius AI Cloud Sandbox**: Isolated runtime execution protecting candidate agents during adversarial testing.
 - [x] **Tavily AI Research Integration**: Grounding agent integrated for live web and policy reconciliation.
 - [x] **Zero-Dependency Fallback Mode**: Transparent, deterministic fallback with clear `DEMO FALLBACK` badges ensures seamless demos when API keys are not supplied.

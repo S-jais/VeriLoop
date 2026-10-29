@@ -92,7 +92,7 @@ function FailuresContent() {
             : SEED_FAILURES[0].trace,
         };
       })
-    : SEED_FAILURES;
+    : [];
 
   // Filtered failure list
   const filteredFailures = allFailures.filter((f) => {
@@ -109,15 +109,18 @@ function FailuresContent() {
   const activeFailure =
     filteredFailures.find((f) => f.id === failureIdParam) ||
     filteredFailures[0] ||
-    allFailures[0];
+    allFailures[0] ||
+    null;
 
-  const nodes = [
-    ['User request', activeFailure.user],
-    ['Observed failure', activeFailure.obs],
-    ['Suspected mechanism', activeFailure.mech],
-    ['Root cause hypothesis', activeFailure.root],
-    ['Grounded evidence', activeFailure.ev],
-  ];
+  const nodes = activeFailure
+    ? [
+        ['User request', activeFailure.user],
+        ['Observed failure', activeFailure.obs],
+        ['Suspected mechanism', activeFailure.mech],
+        ['Root cause hypothesis', activeFailure.root],
+        ['Grounded evidence', activeFailure.ev],
+      ]
+    : [];
 
   const handleCopy = (text: string, idx: number) => {
     navigator.clipboard?.writeText(text);
@@ -202,8 +205,20 @@ function FailuresContent() {
 
       {/* TAB 1: DIAGNOSED FAILURES */}
       {activeMainTab === 'diagnosed' && (
-        <>
-          {/* Filter Chips Bar */}
+        allFailures.length === 0 ? (
+          <div className="empty" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <ShieldCheck size={36} className="text-[var(--cy)] mx-auto mb-3" />
+            <h3 style={{ fontSize: '16px' }}>No Failures Diagnosed Yet</h3>
+            <p className="mu" style={{ fontSize: '13px', maxWidth: '48ch', margin: '6px auto 16px' }}>
+              Connect your AI agent and run an evaluation to isolate causal failure mechanisms with NVIDIA Nemotron.
+            </p>
+            <Link href="/agents" className="btn p sm">
+              Connect AI Agent →
+            </Link>
+          </div>
+        ) : activeFailure ? (
+          <>
+            {/* Filter Chips Bar */}
           <div className="fl" style={{ gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
             <span className="mu" style={{ fontSize: '12px', marginRight: '4px' }}>Filter:</span>
             {['ALL', 'CRITICAL', 'HIGH', 'RETRIEVAL', 'POLICY', 'TOOL', 'SAFETY'].map((filterName) => (
@@ -430,11 +445,24 @@ function FailuresContent() {
             </div>
           </div>
         </>
+        ) : null
       )}
 
       {/* TAB 2: FAILURE REPLAY CONSOLE */}
       {activeMainTab === 'replay' && (
-        <div className="space-y-4">
+        allFailures.length === 0 ? (
+          <div className="empty" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <RotateCcw size={36} className="text-[var(--cy)] mx-auto mb-3" />
+            <h3 style={{ fontSize: '16px' }}>No Failures to Replay</h3>
+            <p className="mu" style={{ fontSize: '13px', maxWidth: '48ch', margin: '6px auto 16px' }}>
+              Once an evaluation detects failures, you can replay each failure side-by-side against candidate patches.
+            </p>
+            <Link href="/dashboard" className="btn p sm">
+              Go to Dashboard →
+            </Link>
+          </div>
+        ) : activeFailure ? (
+          <div className="space-y-4">
           <div className="card space-y-4" style={{ background: 'var(--s1)' }}>
             <div className="fl" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -595,6 +623,7 @@ function FailuresContent() {
             </div>
           </div>
         </div>
+        ) : null
       )}
 
       {/* TAB 3: FAILURE GENOME CLUSTERS */}

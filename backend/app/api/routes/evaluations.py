@@ -4,6 +4,7 @@ Evaluations API routes — includes SSE streaming for real-time progress.
 
 import json
 import uuid
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -11,37 +12,83 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.database import get_db, AsyncSessionLocal
-from app.db.models import Agent, AgentVersion, EvaluationRun
+from app.db.models import Agent, AgentVersion, EvaluationRun, AgentStatus
 from app.services.orchestrator import EvaluationOrchestrator
 
 router = APIRouter()
 
 
 class RunEvaluationRequest(BaseModel):
-    agent_id: str
-    agent_version_id: str
-    suite_id: str | None = None
+    agent_id: Optional[str] = "demo-customer-support-agent-v1"
+    agent_version_id: Optional[str] = None
+    version: Optional[str] = None  # alias for agent_version_id
+    suite_id: Optional[str] = None
 
 
 @router.post("")
+@router.post("/")
+@router.post("/run")
 async def start_evaluation(req: RunEvaluationRequest):
     """Start an evaluation and stream real-time progress via SSE."""
+    target_agent_id = req.agent_id
+    if target_agent_id in ("agent-cs-01", "default", "demo"):
+        target_agent_id = "demo-customer-support-agent-v1"
+
+    target_version_id = req.agent_version_id or req.version
 
     async with AsyncSessionLocal() as session:
-        agent = await session.get(Agent, req.agent_id)
+        agent = None
+        if target_agent_id:
+            agent = await session.get(Agent, target_agent_id)
         if not agent:
-            raise HTTPException(404, f"Agent {req.agent_id} not found")
+            # Fallback to the most recent registered agent
+            agent_res = await session.execute(select(Agent).order_by(Agent.created_at.desc()).limit(1))
+            agent = agent_res.scalar_one_or_none()
+            if not agent:
+                raise HTTPException(404, "No agent found. Please register an agent first.")
+            target_agent_id = agent.id
 
-        version = await session.get(AgentVersion, req.agent_version_id)
+        # Look up version belonging to this specific agent
+        version = None
+        if target_version_id and target_version_id not in ("v1.0", "baseline", "demo", "demo-agent-baseline-v1"):
+            v_check = await session.get(AgentVersion, target_version_id)
+            if v_check and v_check.agent_id == target_agent_id:
+                version = v_check
+
         if not version:
-            raise HTTPException(404, f"Version {req.agent_version_id} not found")
+            # Get latest version for this specific agent
+            ver_res = await session.execute(
+                select(AgentVersion)
+                .where(AgentVersion.agent_id == target_agent_id)
+                .order_by(AgentVersion.created_at.desc())
+                .limit(1)
+            )
+            version = ver_res.scalar_one_or_none()
+            if not version:
+                version = AgentVersion(
+                    id=str(uuid.uuid4()),
+                    agent_id=target_agent_id,
+                    version="Baseline v1.0",
+                    status=AgentStatus.ACTIVE,
+                    config={
+                        "endpoint_url": agent.endpoint_url,
+                        "http_method": agent.http_method,
+                        "adapter_type": agent.adapter_type,
+                    },
+                    is_baseline=True,
+                )
+                session.add(version)
+                await session.commit()
+            target_version_id = version.id
+        else:
+            target_version_id = version.id
 
     async def event_generator():
         async with AsyncSessionLocal() as session:
             orch = EvaluationOrchestrator(session)
             async for event in orch.run_full_evaluation(
-                agent_id=req.agent_id,
-                agent_version_id=req.agent_version_id,
+                agent_id=target_agent_id,
+                agent_version_id=target_version_id,
                 existing_suite_id=req.suite_id,
             ):
                 yield f"data: {json.dumps(event)}\n\n"

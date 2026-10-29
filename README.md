@@ -76,10 +76,10 @@ VeriLoop leverages **Nebius Token Factory** as its enterprise-grade high-through
 
 | Pipeline Job | Model ID | Inference Provider | Role in VeriLoop Pipeline |
 | :--- | :--- | :--- | :--- |
-| **Probe Synthesis (`PROBE_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Generates adversarial multi-turn conversation probes targeting subtle edge cases and policy violations. |
-| **Failure Diagnosis (`DIAGNOSIS_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Performs causal root-cause analysis on execution traces, building dependency DAGs between prompt, tool, and retrieval errors. |
-| **Verification Judge (`JUDGE_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Evaluates candidate responses against strict holdout criteria, safety constraints, and regression firewalls. |
-| **Fast Fallback (`FAST_MODEL`)** | `nvidia/Nemotron-3_5-Lightning` | Nebius Token Factory | Low-latency classification and automated token-capped fallback on transient rate limits. |
+| **Probe Synthesis & Candidate Drafting (`PROBE_MODEL`)** | `nvidia/nemotron-3-nano-30b-a3b` | Nebius Token Factory | Generates adversarial multi-turn conversation probes targeting subtle edge cases and drafts candidate agent interventions. |
+| **Failure & Root Cause Diagnosis (`DIAGNOSIS_MODEL`)** | `nvidia/nemotron-3-ultra-550b-a55b` | Nebius Token Factory | Performs 550B causal root-cause analysis on execution traces, building dependency DAGs between prompt, tool, and retrieval errors. |
+| **Verification Judge (`JUDGE_MODEL`)** | `nvidia/nemotron-3-super-120b-a12b` | Nebius Token Factory | Evaluates candidate responses against strict holdout criteria, safety constraints, and zero-regression firewalls. |
+| **Fast Fallback & Triage (`FAST_MODEL`)** | `nvidia/nemotron-3-nano-30b-a3b` | Nebius Token Factory | Low-latency classification and automated token-capped fallback on transient rate limits. |
 
 ### Where Nebius Token Factory Delivers Critical Value
 - **Enterprise High-Throughput Inference**: Multi-turn agent evaluation requires generating and grading hundreds of parallel conversational turns. Token Factory provides sustained high tokens-per-second throughput.
@@ -180,9 +180,9 @@ Edit `backend/.env` with your API keys:
 # backend/.env
 NEBIUS_API_KEY="your-nebius-token-factory-key"
 NEBIUS_API_BASE="https://api.tokenfactory.us-central1.nebius.com/v1"
-PROBE_MODEL="nvidia/Nemotron-3_5-Lightning"
-DIAGNOSIS_MODEL="nvidia/Nemotron-3_5-Lightning"
-JUDGE_MODEL="nvidia/Nemotron-3_5-Lightning"
+PROBE_MODEL="nvidia/nemotron-3-nano-30b-a3b"
+DIAGNOSIS_MODEL="nvidia/nemotron-3-ultra-550b-a55b"
+JUDGE_MODEL="nvidia/nemotron-3-super-120b-a12b"
 TAVILY_API_KEY="your-tavily-api-key"
 ```
 
@@ -212,7 +212,7 @@ Open `http://localhost:3000` in your browser.
 2. Click **"Quick Demo Access"** on the login screen (no account needed).
 3. From the TopBar or Dashboard, click **"Run Evaluation"**.
 4. The 5-stage progress rail executes:
-   - **Test**: Synthesizes probes with `nvidia/Nemotron-3_5-Lightning`.
+   - **Test**: Synthesizes probes with `nvidia/nemotron-3-nano-30b-a3b`.
    - **Diagnose**: Pinpoints root causes with Tavily evidence grounding.
    - **Intervene**: Generates Candidate A and Candidate B patches.
    - **Validate**: Tests candidates on optimization and validation splits.
@@ -260,7 +260,7 @@ curl -X POST http://127.0.0.1:8000/api/evaluations/run \
 | **Data Consistency** | Contradictory metrics across pages (64% vs 95%, 5 vs 0 hotspots, holdout 58% vs 85%). | **Single Source of Truth**: Unified `EvaluationRun` schema and shared selectors (`selectMetrics`, `selectHotspots`, etc.) driving all views. |
 | **Invariants Enforcement** | Numbers could drift independently in separate component mocks. | **Build-Time Invariant Test**: Build automatically fails if probe splits $\neq 100$, hotspots $\neq$ failure count, or pass rate $\neq \frac{\text{passed}}{\text{total}}$. |
 | **Session Honesty** | Static data falsely labeled "Live". | **Honest Dynamic Labeling**: Badge displays `"Live"` ONLY after a successful 200 OK backend call in the active session; otherwise displays `"Sample run"`. |
-| **Inference Models** | Deprecated model references. | **Verified Nebius Token Factory Models**: Updated to `nvidia/Nemotron-3_5-Lightning` on base URL `https://api.tokenfactory.us-central1.nebius.com/v1/`. |
+| **Inference Models** | Deprecated model references. | **Verified Nebius Token Factory Models**: Updated to specialized NVIDIA models: `nvidia/nemotron-3-nano-30b-a3b` (probes/interventions), `nvidia/nemotron-3-ultra-550b-a55b` (root cause diagnosis), and `nvidia/nemotron-3-super-120b-a12b` (judging/certification) on base URL `https://api.tokenfactory.us-central1.nebius.com/v1/`. |
 | **Tavily Grounding** | Static mock snippets. | **Live Grounding + Injection Defense**: Live Tavily research with 24h caching, HTML stripping, length truncation, and XML prompt-injection defense wrappers. |
 | **Regression Firewall** | Vague "2 critical" vs "2 policy" wording. | **Exact Trace Reconciliation**: Pinpoints exact protected cases broken (`REG-ORD-042`, `REG-POL-089`) with category, severity, and rationale. |
 | **CSV Security** | Vulnerable to spreadsheet injection. | **CWE-1236 Defense**: Cells starting with `=`, `+`, `-`, `@` are safely escaped. |

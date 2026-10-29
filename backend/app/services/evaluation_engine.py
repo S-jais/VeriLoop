@@ -231,7 +231,7 @@ class EvaluationEngine:
             output, result = await self._provider.generate_structured(
                 messages=messages,
                 schema_class=TestEvaluationOutput,
-                model=settings.nebius_fast_model,
+                model=settings.judge_model,
                 task_label="test_evaluation",
                 temperature=0.1,
             )
@@ -308,7 +308,7 @@ class EvaluationEngine:
             final_failure_cat = det_failure_cat or llm_failure_cat
             final_failure_sev = det_failure_sev or llm_failure_sev
             final_notes = f"[Deterministic] {det_notes}\n[LLM] {llm_notes}"
-            model_used = settings.nebius_fast_model
+            model_used = settings.judge_model
             is_live = True
 
         reliability = sum(final_scores[k] * w for k, w in SCORE_WEIGHTS.items())

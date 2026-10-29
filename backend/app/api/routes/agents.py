@@ -137,7 +137,7 @@ async def import_agent_config(req: ImportConfigRequest):
         "issues": issues,
         "parsed": {
             "system_prompt_length": len(req.system_prompt) if req.system_prompt else 0,
-            "model_identifier": req.model_identifier or "nvidia/Nemotron-3_5-Lightning",
+            "model_identifier": req.model_identifier or "nvidia/nemotron-3-nano-30b-a3b",
             "temperature": req.temperature or 0.2,
             "tools_detected": tools_count,
             "framework": req.framework,

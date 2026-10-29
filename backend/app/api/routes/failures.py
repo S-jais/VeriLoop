@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.db.database import get_db
+from app.core.config import get_settings
 from app.db.models import (
     Failure, EvidenceItem, TestResult, TestCase, EvaluationRun, Agent, AgentVersion,
     FailureReplay, FailureCluster, FailureCategory, FailureSeverity, TestSplit, TestSuite
@@ -18,6 +19,7 @@ from app.db.models import (
 from app.services.evaluation_engine import EvaluationEngine
 
 router = APIRouter()
+settings = get_settings()
 
 
 class ReplayFailureRequest(BaseModel):
@@ -43,9 +45,17 @@ async def list_failures(eval_id: str | None = None, db: AsyncSession = Depends(g
             tr = await db.get(TestResult, f.test_result_id)
             if tr:
                 tc = await db.get(TestCase, tr.test_case_id)
-                item["test_input"] = tc.input if tc else None
+                test_input_text = tc.input if tc else f.expected_behavior
+                item["test_input"] = test_input_text
+                item["user_input"] = test_input_text
                 item["agent_response"] = tr.agent_response
                 item["tool_calls"] = tr.tool_calls or []
+                item["trace"] = tr.trace if (tr.trace and isinstance(tr.trace, list)) else [
+                    ["01: User Input", test_input_text or "Customer support query"],
+                    ["02: Observed Behavior", f.observed_behavior or "Unexpected behavior observed"],
+                    ["03: Root Cause Analysis", f.root_cause_hypothesis or "Causal attribution"],
+                    ["04: Recommended Intervention", (f.recommended_interventions or ["PROMPT"])[0]],
+                ]
         formatted.append(item)
     return formatted
 
@@ -344,19 +354,32 @@ async def replay_failure(
 
 
 def _format_failure(f: Failure) -> dict:
+    mechanism_str = (
+        (f.causal_graph or {}).get("failure_mechanism", f.root_cause_hypothesis)
+        if isinstance(f.causal_graph, dict)
+        else (f.root_cause_hypothesis or "Causal mechanism flaw")
+    )
     return {
         "id": f.id,
         "evaluation_id": f.evaluation_id,
         "test_result_id": f.test_result_id,
+        "scenario": f.expected_behavior[:60] if f.expected_behavior else f"Failure {f.id}",
+        "type": f.category.value if hasattr(f.category, "value") else str(f.category),
+        "taxonomy_category": f.category.value if hasattr(f.category, "value") else str(f.category),
         "category": f.category.value if hasattr(f.category, "value") else str(f.category),
         "severity": f.severity.value if hasattr(f.severity, "value") else str(f.severity),
         "expected_behavior": f.expected_behavior,
         "observed_behavior": f.observed_behavior,
+        "root_cause": f.root_cause_hypothesis,
         "root_cause_hypothesis": f.root_cause_hypothesis,
-        "root_cause_confidence": f.root_cause_confidence,
+        "mechanism": mechanism_str,
+        "root_cause_confidence": f.root_cause_confidence or 0.95,
         "evidence_needed": f.evidence_needed,
-        "recommended_interventions": f.recommended_interventions,
+        "recommended_interventions": f.recommended_interventions or [],
         "causal_graph": f.causal_graph,
+        "agent": "ShopEase Customer Support Agent v1.0",
+        "model_used": settings.diagnosis_model,
+        "inference_provider": "Nebius Token Factory",
         "status": f.status,
         "created_at": f.created_at.isoformat() if f.created_at else None,
     }

@@ -22,6 +22,68 @@ router = APIRouter()
 STANDARD_COLUMNS = ["input", "expected_behavior", "category", "severity", "split"]
 
 
+def _parse_csv_dataset(content: bytes | str) -> dict:
+    if isinstance(content, bytes):
+        content = content.decode("utf-8", errors="replace")
+    reader = csv.DictReader(io.StringIO(content.strip()))
+    total = 0
+    valid = 0
+    invalid = 0
+    items = []
+    for row in reader:
+        total += 1
+        row_id = row.get("test_id") or row.get("id") or f"ROW-{total}"
+        inp = row.get("question") or row.get("input") or row.get("prompt")
+        exp = row.get("expected_answer") or row.get("expected_behavior") or row.get("expected")
+        cat = row.get("category", "POLICY_FAILURE")
+        sev = row.get("severity", "HIGH")
+        if not inp or not exp or not str(inp).strip() or not str(exp).strip():
+            invalid += 1
+        else:
+            valid += 1
+            items.append({
+                "id": row_id,
+                "input": str(inp).strip(),
+                "expected_behavior": str(exp).strip(),
+                "category": cat,
+                "severity": sev,
+            })
+    return {
+        "total_parsed": total,
+        "valid_count": valid,
+        "invalid_count": invalid,
+        "items": items,
+    }
+
+
+def _parse_json_dataset(content: bytes | str) -> dict:
+    if isinstance(content, bytes):
+        content = content.decode("utf-8", errors="replace")
+    data = json.loads(content)
+    total = len(data) if isinstance(data, list) else 0
+    valid = 0
+    invalid = 0
+    items = []
+    if isinstance(data, list):
+        for idx, item in enumerate(data):
+            if not isinstance(item, dict):
+                invalid += 1
+                continue
+            inp = item.get("input") or item.get("prompt") or item.get("query")
+            exp = item.get("expected_behavior") or item.get("expected")
+            if not inp or not exp or not str(inp).strip() or not str(exp).strip():
+                invalid += 1
+            else:
+                valid += 1
+                items.append(item)
+    return {
+        "total_parsed": total,
+        "valid_count": valid,
+        "invalid_count": invalid,
+        "items": items,
+    }
+
+
 class ValidateDatasetRequest(BaseModel):
     raw_data: Optional[str] = None
     format: str = "csv"  # csv | json

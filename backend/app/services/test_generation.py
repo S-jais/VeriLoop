@@ -308,7 +308,7 @@ class TestGenerationService:
             output, result = await self._provider.generate_structured(
                 messages=messages,
                 schema_class=TestGenerationOutput,
-                model=settings.nebius_fast_model,  # Use fast model for test generation
+                model=settings.probe_model,  # Use nano-30b model for probe generation
                 task_label="test_generation",
                 temperature=0.7,  # Higher temperature for diversity
                 max_tokens=4096,

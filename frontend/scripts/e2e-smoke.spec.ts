@@ -104,7 +104,7 @@ test.describe('VeriLoop End-to-End Verification', () => {
     await expect(page.getByRole('tab', { name: /Evaluation/i })).toBeVisible();
 
     // Model allocation table contains verified model
-    await expect(page.getByText('nvidia/Nemotron-3_5-Lightning')).toBeVisible();
+    await expect(page.getByText('nvidia/nemotron-3-nano-30b-a3b')).toBeVisible();
     await expect(page.getByText('Nebius Token Factory')).toBeVisible();
   });
 });
