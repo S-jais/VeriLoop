@@ -8,7 +8,7 @@ import { VeriLoopCore } from '@/components/VeriLoopCore';
 import { VeriLoopLogo } from '@/components/Logo';
 import { NEMOTRON_MODEL_ID, SPONSOR_STRIP } from '@/lib/config';
 
-export const DEMO_VIDEO_URL = 'https://youtu.be/placeholder-veriloop-demo';
+export const DEMO_VIDEO_URL = 'https://www.youtube.com/watch?v=Ehrl7E23PWk';
 export const GITHUB_REPO_URL = 'https://github.com/S-jais/VeriLoop';
 export const README_URL = 'https://github.com/S-jais/VeriLoop#readme';
 export const HACKATHON_TRACK = 'Track: Coding and Agentic Engineering';
